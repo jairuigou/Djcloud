@@ -1,0 +1,30 @@
+<!doctype html>
+{% load static %}
+<html>
+<head>
+  <meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
+  <title>cloud</title>
+  <link rel="short icon" href="{% static '/cloud/img/logo.ico' %}"></link>
+  <script src="{% static '/cloud/js/vue.min.js' %}"></script>
+  <script src="https://unpkg.com/axios/dist/axios.min.js"></script>
+  <script src="https://cdn.bootcss.com/qs/6.5.2/qs.min.js"></script>
+</head>
+<body>
+    <div id="img">
+    <img src="{% static '/cloud/img/logo.png' %}" alt="logo">
+    </div>
+
+    {% verbatim %}
+    <div id="login">
+        username:
+        <input type="text" name="username" value="testuser" ref="inputname"><br>
+        password:
+        <input type="password" name="password" value="passwd" ref="inputpass"><br>
+        <button v-on:click="sendkv">login</button>
+        <p>{{ message }} </p> 
+    </div>
+    {% endverbatim %}
+
+<script src="{% static '/cloud/js/index.js' %}"></script>
+</body>
+</html>
