@@ -19,12 +19,12 @@ var upload = new Vue({
             	data:formdata,
             	headers: {'Content-Type': 'application/x-www-form-urlencoded'}
             }).then(response => {
-            	var fetch = response.data['fetch']
-            	if(fetch == "up_suc"){
+            	var status = response.data['status']
+            	if(status == "upload_ok"){
             		document.getElementById("result").innerHTML += "  upload success"
 					location.reload(true)
             	}
-           		else if( fetch == "up_fad"){
+           		else if(status == "upload_failed"){
                 	document.getElementById("result").innerHTML += "  upload failed" 
             	}
             	else{
@@ -32,7 +32,7 @@ var upload = new Vue({
             	}
             })
               .catch(error=>{
-                    document.getElementById("result").innerHTML = "  upload error"  
+                    document.getElementById("result").innerHTML = "  upload response error"  
               })
        
 		},
@@ -71,26 +71,26 @@ var filelist = new Vue({
                    data:formdata,
                    headers: {'Content-Type': 'application/x-www-form-urlencoded'}
             }).then(response => {
-                    var data = response.data['state']
-                    if(data== "log_err"){
-                        location.reload(true)
-					}
-                    else if(data=="del_suc"){
+                    var status = response.data['status']
+                    if(status== "delete_ok"){
+						document.getElementById("result").innerHTML += "  delete success"
 						location.reload(true)
-						document.getElementById("result").innerHTML += "  delete success" 
+					}
+                    else if(status=="delete_failed"){
+						document.getElementById("result").innerHTML += "  delete failed" 
 					}
                     else {
-						document.getElementById("result").innerHTML += "  delete failed" 
+						location.reload(true)
 					}
             })
             .catch(error=>{
-				   	document.getElementById("result").innerHTML += "  delete error " 
+				   	document.getElementById("result").innerHTML += "  delete response error " 
             })
 		},
 		download:function(item){
 			var intext = item.currentTarget.parentNode.innerText
 			let filename = intext.split(' ')
-			location.href='/cloud/download/?f='+filename[0]	
+			location.href='/download/?f='+filename[0]	
 		},
     }
 

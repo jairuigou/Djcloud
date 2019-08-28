@@ -30,16 +30,16 @@ new Vue({
             })
             axios.post("verify",dat,{headers:{'Content-Type':'application/x-www-form-urlencoded'}})
             .then(response => {
-                var date = response.data['date']
-                if(date == "login_ok" || date == "logged"){
+                var status = response.data['status']
+                if(status == "login_ok" || status == "logged"){
                     location.reload(true)
                 }
                 else{
-                    this.message = "failed" 
+                    this.message = "verification failed" 
                 }
             })
             .catch(error=>{
-                this.message = "response error"
+                this.message = "verify response error"
             }) 
         }
     }

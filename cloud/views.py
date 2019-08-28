@@ -6,6 +6,8 @@ from django.views.decorators.csrf import ensure_csrf_cookie
 import os,datetime,getpass
 
 savePath = "/home/"+getpass.getuser()+"/cloudfile/"
+session_time = 100000
+root_path = '/'
 #views
 @ensure_csrf_cookie
 def index(request):
@@ -24,16 +26,16 @@ def verify(request):
     passwd = request.POST['password']
     hasUser = User.objects.filter(username=username)
     data = {
-            'date' : 'login_error' ,
+            'status' : 'login_failed' ,
             }
     if hasUser:
         if(hasUser[0].passwd == passwd):
             if is_logged(request):
-                data['date'] = 'logged'
+                data['status'] = 'logged'
             else:
                 request.session['username'] = hasUser[0].username
-                request.session.set_expiry(100000)
-                data['date'] = 'login_ok'
+                request.session.set_expiry(session_time)
+                data['status'] = 'login_ok'
     return JsonResponse(data) 
 
 def logout(request):
@@ -41,14 +43,14 @@ def logout(request):
         del request.session['username']
     except KeyError:
         pass
-    return HttpResponseRedirect('/cloud/')    
+    return HttpResponseRedirect(root_path)    
 
 def upload(request):
     data = {
-            'fetch': 'up_fad',
+            'status': 'upload_failed',
     }
     if not is_logged(request):
-        data['fetch'] = 'log_err'
+        data['status'] = 'not_logged'
         return JsonResponse(data)
     uploadfile = request.FILES['file']
     username = request.session['username']
@@ -63,15 +65,15 @@ def upload(request):
         fp.close()
         obj = Filepath(username=username,filename=filename,filetype=filetype,viewtype=viewtype,uploaddate=datetime.date.today())
         obj.save()
-        data['fetch'] = 'up_suc'
+        data['status'] = 'upload_ok'
     return JsonResponse(data)
 
 def delet(request):
     data = { 
-            'state' : ''
+            'status' : 'delete_failed'
     }
     if not is_logged(request):
-        data['state'] = 'log_err'
+        data['status'] = 'not_logged'
         return JsonResponse(data)
     dfilename = request.POST['file']
     username = request.session['username'] 
@@ -79,14 +81,13 @@ def delet(request):
     if hasFile:
         hasFile.delete() 
         rmfile(username,dfilename)
-        data['state'] = 'del_suc'
+        data['status'] = 'delele_ok'
         return JsonResponse(data)
-    else:
-        data['state'] = 'del_err'
-        return JsonResponse(data)
+    return JsonResponse(data)
+
 def download(request):
 	if not is_logged(request):
-		return HttpResponseRedirect('/cloud/') 
+		return HttpResponseRedirect(root_path) 
 	filename = request.GET.get('f')
 	username = request.session['username']
 	hasFile = Filepath.objects.filter(filename=filename)
@@ -97,7 +98,7 @@ def download(request):
 			response = HttpResponse(returnfile,content_type=filetype)
 			response['Content-Disposition'] = 'attachment;filename='+filename
 			return response
-	return HttpResponseRedirect('/cloud/')
+	return HttpResponseRedirect(root_path)
 #fun
 def mkdir_foruser(username):
     if(not os.path.exists(savePath)):
