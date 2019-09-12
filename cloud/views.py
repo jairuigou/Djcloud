@@ -1,8 +1,9 @@
 from django.http import HttpResponse,HttpResponseRedirect,JsonResponse,FileResponse
 from django.shortcuts import render
 from django.urls import reverse
-from .models import User,Filepath
+from django.contrib.auth import authenticate,login,logout
 from django.views.decorators.csrf import ensure_csrf_cookie
+from .models import Filepath
 import os,datetime,getpass
 
 savePath = "/home/"+getpass.getuser()+"/cloudfile/"
@@ -10,50 +11,45 @@ session_time = 100000
 root_path = '/'
 #views
 @ensure_csrf_cookie
-def index(request):
-    if is_logged(request):
-        fileList = Filepath.objects.filter(username=request.session['username'])
+def Index(request):
+    if request.user.is_authenticated:
+        filelist = Filepath.objects.filter(owner = request.user.username)
         context = {
-                'username' : request.session['username'],
-                'fileList' : fileList,
+                'username' : request.user.username,
+                'fileList' : filelist,
         }
         return render(request,'cloud/clientarea.html',context)
     else:
         return render(request,'cloud/index.html')
 
-def verify(request):
-    username = request.POST['username']
-    passwd = request.POST['password']
-    hasUser = User.objects.filter(username=username)
+def Verify(request):
     data = {
-            'status' : 'login_failed' ,
-            }
-    if hasUser:
-        if(hasUser[0].passwd == passwd):
-            if is_logged(request):
-                data['status'] = 'logged'
-            else:
-                request.session['username'] = hasUser[0].username
-                request.session.set_expiry(session_time)
-                data['status'] = 'login_ok'
-    return JsonResponse(data) 
-
-def logout(request):
-    try:
-        del request.session['username']
-    except KeyError:
-        pass
+            'status' : 'login_failed'
+    }
+    if request.user.is_authenticated:
+        data['status'] = 'logged'
+        return JsonResponse(data)
+    username = request.POST['username']
+    password = request.POST['password']
+    user = authenticate(username=username,password=password)
+    if user is not None:
+        login(request,user)
+        data['status'] = 'login_ok'
+    return JsonResponse(data)
+    
+def Logout(request):
+    logout(request) 
     return HttpResponseRedirect(root_path)    
 
-def upload(request):
+def Upload(request):
     data = {
             'status': 'upload_failed',
     }
-    if not is_logged(request):
+    if not request.user.is_authenticated:
         data['status'] = 'not_logged'
         return JsonResponse(data)
     uploadfile = request.FILES['file']
-    username = request.session['username']
+    username = request.user.username
     if uploadfile:
         filename = get_filename(uploadfile.name)
         filetype = uploadfile.content_type
@@ -63,42 +59,41 @@ def upload(request):
         for chunk in uploadfile.chunks():
             fp.write(chunk)
         fp.close()
-        obj = Filepath(username=username,filename=filename,filetype=filetype,viewtype=viewtype,uploaddate=datetime.date.today())
+        obj = Filepath(owner=username,filename=filename,filetype=filetype,viewtype=viewtype,uploaddate=datetime.date.today())
         obj.save()
         data['status'] = 'upload_ok'
     return JsonResponse(data)
 
-def delet(request):
+def Delete(request):
     data = { 
             'status' : 'delete_failed'
     }
-    if not is_logged(request):
+    if not request.user.is_authenticated:
         data['status'] = 'not_logged'
         return JsonResponse(data)
-    dfilename = request.POST['file']
-    username = request.session['username'] 
-    hasFile = Filepath.objects.filter(filename=dfilename)
+    filename = request.POST['file']
+    username = request.user.username 
+    hasFile = Filepath.objects.filter(filename=filename)
     if hasFile:
         hasFile.delete() 
-        rmfile(username,dfilename)
+        rmfile(username,filename)
         data['status'] = 'delele_ok'
-        return JsonResponse(data)
     return JsonResponse(data)
 
-def download(request):
-	if not is_logged(request):
-		return HttpResponseRedirect(root_path) 
-	filename = request.GET.get('f')
-	username = request.session['username']
-	hasFile = Filepath.objects.filter(filename=filename)
-	if hasFile:
-		filetype = hasFile[0].filetype
-		if(is_hasfile(username,filename)):
-			returnfile = open(savePath+username+'/'+filename,'rb').read()
-			response = HttpResponse(returnfile,content_type=filetype)
-			response['Content-Disposition'] = 'attachment;filename='+filename
-			return response
-	return HttpResponseRedirect(root_path)
+def Download(request):
+    if not request.user.is_authenticated:
+        return HttpResponseRedirect(root_path) 
+    filename = request.GET.get('f')
+    username = request.user.username
+    hasFile = Filepath.objects.filter(filename=filename)
+    if hasFile:
+        filetype = hasFile[0].filetype
+        if(is_hasfile(username,filename)):
+            returnfile = open(savePath+username+'/'+filename,'rb').read()
+            response = HttpResponse(returnfile,content_type=filetype)
+            response['Content-Disposition'] = 'attachment;filename='+filename
+            return response
+    return HttpResponseRedirect(root_path)
 #fun
 def mkdir_foruser(username):
     if(not os.path.exists(savePath)):
@@ -122,12 +117,6 @@ def is_hasfile(username,filename):
 		return True
 	else:
 		return False
-
-def is_logged(request):
-    if('username' not in request.session):
-        return False
-    else:
-        return True
 
 def get_viewtype(filename):
 	if '.' in filename:

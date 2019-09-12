@@ -10,7 +10,7 @@ from django.db import models
 
 class Filepath(models.Model):
     id = models.AutoField(primary_key=True)
-    username = models.CharField(max_length=20,blank=True,null=True)
+    owner = models.CharField(max_length=20,blank=True,null=True)
     filename = models.CharField(max_length=100, blank=True, null=True)
     filetype = models.CharField(max_length=100, blank=True, null=True)
     viewtype = models.CharField(max_length=100,blank=True,null=True)
@@ -19,13 +19,3 @@ class Filepath(models.Model):
     class Meta:
         managed = True
         db_table = 'filepath'
-
-
-class User(models.Model):
-    uid = models.AutoField(primary_key=True)
-    username = models.CharField(max_length=20, blank=True, null=True)
-    passwd = models.CharField(max_length=50, blank=True, null=True)
-
-    class Meta:
-        managed = True
-        db_table = 'user'

@@ -19,17 +19,20 @@ new Vue({
             }
             return ""
         },
-        sendkv: function(){
+        verify: function(){
             this.username = this.$refs.inputname.value
             this.password = this.$refs.inputpass.value
-            var csrftoken = this.getcsrftoken('csrftoken')
-            var dat = Qs.stringify({
-                username: this.username,
-                password: this.password,
-                csrfmiddlewaretoken: csrftoken
-            })
-            axios.post("verify",dat,{headers:{'Content-Type':'application/x-www-form-urlencoded'}})
-            .then(response => {
+            let token = this.getcsrftoken('csrftoken')
+			formdata = new FormData()
+			formdata.append('username',this.username)
+			formdata.append('password',this.password)
+			formdata.append('csrfmiddlewaretoken',token)
+			axios({
+				url: 'verify',
+				method: 'post',
+				data: formdata,
+				headers :{'Content-Type':'application/x-www-form-urlencoded'}
+			}).then(response => {
                 var status = response.data['status']
                 if(status == "login_ok" || status == "logged"){
                     location.reload(true)
