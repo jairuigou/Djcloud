@@ -13,8 +13,12 @@ class Filepath(models.Model):
     owner = models.CharField(max_length=20,blank=True,null=True)
     filename = models.CharField(max_length=100, blank=True, null=True)
     filetype = models.CharField(max_length=100, blank=True, null=True)
+    filesize = models.CharField(max_length=100, blank=True, null=True)
+    viewname = models.CharField(max_length=100,blank=True,null=True)
     viewtype = models.CharField(max_length=100,blank=True,null=True)
+    viewsize = models.CharField(max_length=100,blank=True,null=True)
     uploaddate = models.CharField(max_length=20, blank=True, null=True)
+    
 
     class Meta:
         managed = True

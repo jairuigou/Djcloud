@@ -2,10 +2,11 @@ from django.urls import path,re_path
 from . import views
 
 urlpatterns = [
-        path('',views.Index,name='Index'),
-        path('verify',views.Verify,name='Verify'),
-        path('logout',views.Logout,name='Logout'),
-        path('upload',views.Upload,name='Upload'),
-        path('delet',views.Delete,name='Delete'),
-	re_path(r'^download/$',views.Download,name='Download'),
+        path('',views.index_get,name='index_get'),
+        path('verify',views.verify_ajax,name='verify_ajax'),
+        path('logout',views.logout_get,name='logout_get'),
+        path('uploadsmall',views.upload_smallfile_post,name='upload_smallfile_post'),
+        path('uploadlarge',views.upload_largefile_post,name='upload_largefile_post'),
+        path('remove',views.remove_post,name='remove_post'),
+	re_path(r'^download/$',views.download_get,name='download_get'),
 ] 

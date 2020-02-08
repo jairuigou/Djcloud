@@ -15,7 +15,7 @@
             <ul>
             {% for file in fileList %}
             <li>
-				{{ file.filename }} ,{{ file.viewtype }} ,{{ file.uploaddate }}
+				{{ file.viewname }} | {{ file.viewtype }} | {{ file.viewsize }} | {{ file.uploaddate }}
                 <button v-on:click="delet($event)">delete</button>
 				<button v-on:click="download($event)">download</button>
 			</li>

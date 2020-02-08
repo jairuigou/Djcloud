@@ -6,12 +6,13 @@ from django.views.decorators.csrf import ensure_csrf_cookie
 from .models import Filepath
 import os,datetime,getpass
 
-savePath = "/home/"+getpass.getuser()+"/cloudfile/"
-session_time = 100000
-root_path = '/'
+FILE_SAVE_PATH = "/home/"+getpass.getuser()+"/cloudfile/"
+SESSION_TIME = 100000
+# to index page
+ROOT_URL = '/'
 #views
 @ensure_csrf_cookie
-def Index(request):
+def index_get(request):
     if request.user.is_authenticated:
         filelist = Filepath.objects.filter(owner = request.user.username)
         context = {
@@ -22,7 +23,7 @@ def Index(request):
     else:
         return render(request,'cloud/index.html')
 
-def Verify(request):
+def verify_ajax(request):
     data = {
             'status' : 'login_failed'
     }
@@ -34,14 +35,15 @@ def Verify(request):
     user = authenticate(username=username,password=password)
     if user is not None:
         login(request,user)
+        request.session.set_expiry(SESSION_TIME)
         data['status'] = 'login_ok'
     return JsonResponse(data)
     
-def Logout(request):
+def logout_get(request):
     logout(request) 
-    return HttpResponseRedirect(root_path)    
+    return HttpResponseRedirect(ROOT_URL)    
 
-def Upload(request):
+def upload_smallfile_post(request):
     data = {
             'status': 'upload_failed',
     }
@@ -51,20 +53,53 @@ def Upload(request):
     uploadfile = request.FILES['file']
     username = request.user.username
     if uploadfile:
-        filename = get_filename(uploadfile.name)
+        filename = parse_filename(uploadfile.name)
         filetype = uploadfile.content_type
-        viewtype = get_viewtype(filename)
-        savedir = mkdir_foruser(username) 
+        viewtype = parse_viewtype(filename)
+        filesize = uploadfile.size
+        viewsize = parse_viewsize(filesize)
+        viewname = parse_viewname(filename)
+        savedir = get_user_filepath(username) 
         fp = open((savedir+filename),"wb")
         for chunk in uploadfile.chunks():
             fp.write(chunk)
         fp.close()
-        obj = Filepath(owner=username,filename=filename,filetype=filetype,viewtype=viewtype,uploaddate=datetime.date.today())
+        obj = Filepath(owner=username,filename=filename,filetype=filetype,
+                        viewtype=viewtype,filesize=filesize,viewsize=viewsize,
+                        viewname=viewname,uploaddate=datetime.date.today())
         obj.save()
         data['status'] = 'upload_ok'
     return JsonResponse(data)
 
-def Delete(request):
+def upload_largefile_post(request):
+    data = {
+        'status':'upload_failed',
+    }
+    if not request.user.is_authenticated:
+        data['status'] = 'not_logged'
+        return JsonResponse(data)
+    uploadslice = request.FILES['blob']
+    username = request.user.username
+    if uploadslice:
+        filename = request.POST['filename']
+        slicesize = uploadslice.size
+        totalsize = request.POST['totalsize']
+        slicesnum = request.POST['slicesnum']
+        filetype = request.POST['type']
+        sliceindex = request.POST['index']
+
+        savedir = get_user_filepath(username)
+        fp = open((savedir+"slice/"+filename+sliceindex),"wb") 
+        for chunk in uploadslice.chunks():
+            fp.write(chunk)
+        fp.close()
+        if int(sliceindex) == slicesnum :
+            data['status'] = 'upload_ok'
+        else:
+            data['status'] = 'upload_slice_ok'
+    return JsonResponse(data)
+
+def remove_post(request):
     data = { 
             'status' : 'delete_failed'
     }
@@ -76,55 +111,85 @@ def Delete(request):
     hasFile = Filepath.objects.filter(filename=filename)
     if hasFile:
         hasFile.delete() 
-        rmfile(username,filename)
+        rm_file(username,filename)
         data['status'] = 'delele_ok'
     return JsonResponse(data)
 
-def Download(request):
+def download_get(request):
     if not request.user.is_authenticated:
-        return HttpResponseRedirect(root_path) 
+        return HttpResponseRedirect(ROOT_URL) 
     filename = request.GET.get('f')
     username = request.user.username
     hasFile = Filepath.objects.filter(filename=filename)
     if hasFile:
         filetype = hasFile[0].filetype
         if(is_hasfile(username,filename)):
-            returnfile = open(savePath+username+'/'+filename,'rb').read()
+            returnfile = open(FILE_SAVE_PATH+username+'/'+filename,'rb').read()
             response = HttpResponse(returnfile,content_type=filetype)
             response['Content-Disposition'] = 'attachment;filename='+filename
             return response
-    return HttpResponseRedirect(root_path)
+    return HttpResponseRedirect(ROOT_URL)
+
+
 #fun
-def mkdir_foruser(username):
-    if(not os.path.exists(savePath)):
-        os.mkdir(savePath)
-    if(not os.path.exists(savePath+ username)):
-        os.mkdir(savePath + username)
-    return savePath+username+"/"
+# get user file path /rootpath/username
+def get_user_filepath(username):
+    if(not os.path.exists(FILE_SAVE_PATH + username)):
+        if(not os.path.exists(FILE_SAVE_PATH)):
+            init_total_space()
+        init_user_space(username)
+    return FILE_SAVE_PATH+username+"/"
+def init_total_space():
+    os.mkdir(FILE_SAVE_PATH)
+def init_user_space(username):
+    os.mkdir(FILE_SAVE_PATH + username)
+    os.mkdir(FILE_SAVE_PATH + username+"/"+"slice")
 
-def rmdir_foruser(username):
-    if(os.path.exists(savePath + username)):
-        os.rmdir(savePath + username)
+def rm_user_dir(username):
+    if(os.path.exists(FILE_SAVE_PATH + username)):
+        os.rmdir(FILE_SAVE_PATH + username)
 
-def rmfile(username,filename):
-    filepath = savePath + username + '/' + filename
+def rm_file(username,filename):
+    filepath = FILE_SAVE_PATH + username + '/' + filename
     if(os.path.exists(filepath)):
         os.remove(filepath)
 
 def is_hasfile(username,filename):
-	filepath = savePath + username + '/' + filename
+	filepath = FILE_SAVE_PATH + username + '/' + filename
 	if(os.path.exists(filepath)):
 		return True
 	else:
 		return False
 
-def get_viewtype(filename):
+def parse_viewtype(filename):
 	if '.' in filename:
 		return filename.split('.')[1]
 	else:
 		return "unknown"
 
-def get_filename(filename):
+def parse_viewsize(filesize):
+    filesizeval = int(filesize)
+    B = filesizeval
+    count = 0
+    while B>1024 :
+        B = int(B/1024)
+        count += 1
+    unit = ['B','KB','MB','GB','TB']
+    integer = B
+    decimal = int(filesizeval % (pow(1024,count)) / pow(1024,count) * 100)
+    viewsize = str(integer) + '.'
+    if decimal < 10:
+        viewsize += '0'
+    viewsize += str(decimal) + unit[count]
+    return viewsize
+
+def parse_viewname(filename):
+    viewname = filename
+    if '.' in filename:
+        viewname = filename.split('.',1)[0]
+    return viewname
+
+def parse_filename(filename):
     hasFile = Filepath.objects.filter(filename=filename)
     if hasFile:
         if '.' in filename:
@@ -133,14 +198,14 @@ def get_filename(filename):
             secondname = div[1]
             suffix = 0
             while hasFile:
-                filename = firstname + "-" + str(suffix) + "." + secondname
+                filename = firstname + "(" + str(suffix) + ")." + secondname
                 hasFile = Filepath.objects.filter(filename=filename)
                 suffix = suffix + 1
         else:
             suffix = 0
             while hasFile:
-                filename = filename + "-" + str(suffix)
-                hasFile = Filepath.objects.filter(filepath=filename)
+                filename = filename + "(" + str(suffix) +")"
+                hasFile = Filepath.objects.filter(filename=filename)
                 suffix = suffix + 1
     return filename
 

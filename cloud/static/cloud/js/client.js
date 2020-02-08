@@ -1,23 +1,39 @@
 var upload = new Vue({
     el: '#upload',
     data:{
-        filepath : "",
-        message : "", 
+        file : "",
+        totalsize : 0,
+        slicesize : 1024*1024*3,
+        slicesnum : 0,
+        istart : 0,
+        iend : 0,
+        index : 1,
+        retrycount : 0,
     },
     methods:{
-        upload: function(){
-            this.filepath = this.$refs.filepath.value
-			var file = document.getElementById("input_file").files[0]
-            document.getElementById("result").innerHTML = file.name
+        upload:function(){
+            this.file = document.getElementById("input_file").files[0]
+            if(this.file.size<this.slicesize){
+                this.uploadsmallfile()
+            }
+            else{
+                this.uploadlargefile()
+            }
+        },
+        uploadsmallfile: function(){
 			let token = this.getcsrftoken('csrftoken') 
             formdata = new FormData()
-           	formdata.append('file',file)
+           	formdata.append('file',this.file)
             formdata.append('csrfmiddlewaretoken',token) 
             axios({
-            	url: 'upload',
+            	url: 'uploadsmall',
             	method:'post',
-            	data:formdata,
-            	headers: {'Content-Type': 'application/x-www-form-urlencoded'}
+                data:formdata,
+                headers: {'Content-Type': 'application/x-www-form-urlencoded'},
+                onUploadProgress: progressEvent=>{
+                    var percentCompleted = Math.round( (progressEvent.loaded * 100) / progressEvent.total )
+                    document.getElementById("result").innerHTML = percentCompleted + '%'
+                }
             }).then(response => {
             	var status = response.data['status']
             	if(status == "upload_ok"){
@@ -32,10 +48,63 @@ var upload = new Vue({
             	}
             })
               .catch(error=>{
-                    document.getElementById("result").innerHTML = "  upload response error"  
+                    console.log(error)
+                    document.getElementById("result").innerHTML = "  smallfile upload response error"  
               })
        
-		},
+        },
+        uploadlargefile:function(){
+            this.totalsize = this.file.size
+            this.slicesnum = Math.ceil(this.totalsize / this.slicesize)
+            this.loopajax()
+        },
+        loopajax:function(){
+            if(this.istart>=this.totalsize){
+	            document.getElementById("result").innerHTML += "  upload error"
+                return
+            }
+            this.iend = this.istart + this.slicesize
+            if(this.iend> this.totalsize)
+                this.iend = this.totalsize
+            let slice = this.file.slice(this.istart,this.iend)
+            let token = this.getcsrftoken('csrftoken')
+            formdata = new FormData()
+            formdata.append('filename',this.file.name)
+            formdata.append('type',this.file.type)
+            formdata.append('totalsize',this.totalsize)
+            formdata.append('slicesnum',this.slicesnum)
+            formdata.append('index',this.index++)
+            formdata.append('csrfmiddlewaretoken',token)
+            formdata.append('blob',slice)
+            axios({
+                url:'uploadlarge',
+                method:'post',
+                data: formdata,
+                headers: {'Content-Type': 'application/x-www-form-urlencoded'},
+            }).then(response=>{
+                var status = response.data['status']
+                if(status == "upload_failed"){
+                    if(this.retrycount < 3){
+                        this.loopajax()
+                        this.retrycount++
+                    }
+                    else{
+                        this.istart = this.iend
+                        this.loopajax()
+                    }
+                }
+                else if(status == "upload_slice_ok"){
+                    this.istart = this.iend
+                    this.loopajax()
+                }
+                else if(status == "upload_ok"){
+	                document.getElementById("result").innerHTML += "  upload success"
+                }
+            }).catch(error=>{
+	                document.getElementById("result").innerHTML += "  largefile upload response error"
+            })
+
+        },
         getcsrftoken: function(name){
             if(document.cookie && document.cookie!=''){
                 var cookies = document.cookie.split(';')
@@ -58,7 +127,7 @@ var filelist = new Vue({
 		message : "" ,        
     },
     methods:{
-		delet: function(item){
+		remove: function(item){
             var intext = item.currentTarget.parentNode.innerText
             let filename = intext.split(' ') 
             let token = upload.getcsrftoken('csrftoken')
@@ -66,7 +135,7 @@ var filelist = new Vue({
             formdata.append('file',filename[0])
             formdata.append('csrfmiddlewaretoken',token) 
             axios({
-                   url: 'delet',
+                   url: 'remove',
                    method:'post',
                    data:formdata,
                    headers: {'Content-Type': 'application/x-www-form-urlencoded'}
