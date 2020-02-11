@@ -7,7 +7,6 @@
   <link rel="short icon" href="{% static '/cloud/img/logo.ico' %}"></link>
   <script src="{% static '/cloud/js/vue.min.js' %}"></script>
   <script src="{% static '/cloud/js/axios.min.js' %}"></script>
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/qs/6.8.0/qs.min.js"></script>
 </head>
 <body>
     <div id="img">
@@ -28,7 +27,7 @@
     <form action="" method="POST">
       {% csrf_token %}
       {{form}}<br>
-      <input type="submit" value="Sign in">
+      <input type="submit" value="Sign in" onclick="verify()">
     </form>
 
 <script src="{% static '/cloud/js/index.js' %}"></script>
