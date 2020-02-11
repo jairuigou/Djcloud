@@ -4,6 +4,7 @@ from django.urls import reverse
 from django.contrib.auth import authenticate,login,logout
 from django.views.decorators.csrf import ensure_csrf_cookie
 from .models import Filepath
+from .forms import LoginForm
 import os,datetime,getpass
 
 FILE_SAVE_PATH = "/home/"+getpass.getuser()+"/cloudfile/"
@@ -12,6 +13,35 @@ SESSION_TIME = 100000
 ROOT_URL = '/'
 #views
 @ensure_csrf_cookie
+def index_test(request):
+    if request.user.is_authenticated:
+        filelist = Filepath.objects.filter(owner = request.user.username)
+        context = {
+                'username' : request.user.username,
+                'fileList' : filelist,
+        }
+        return render(request,'cloud/clientarea.html',context)
+    elif request.method == 'POST':
+        form = LoginForm(request.POST)
+        if form.is_valid():
+            formdata = form.cleaned_data
+            user = authenticate(username=formdata['username'],
+                                password=formdata['password'])
+            if user is not None:
+                login(request,user)
+                request.session.set_expiry(SESSION_TIME)
+                filelist = Filepath.objects.filter(owner = request.user.username)
+                context = {
+                    'username' : request.user.username,
+                    'fileList' : filelist,
+                }
+                return render(request,'cloud/clientarea.html',context)               
+            else:
+                return render(request,'cloud/index.html',{'form':form})
+    else:
+        form = LoginForm()
+        return render(request,'cloud/index.html',{'form':form})
+   
 def index_get(request):
     if request.user.is_authenticated:
         filelist = Filepath.objects.filter(owner = request.user.username)

@@ -14,7 +14,7 @@
     <img src="{% static '/cloud/img/logo.png' %}" alt="logo">
     </div>
 
-    {% verbatim %}
+<!--    {% verbatim %}
     <div id="login">
         username:
         <input type="text" name="username" value="testuser" ref="inputname"><br>
@@ -24,6 +24,12 @@
         <p>{{ message }} </p> 
     </div>
     {% endverbatim %}
+ -->
+    <form action="" method="POST">
+      {% csrf_token %}
+      {{form}}<br>
+      <input type="submit" value="Sign in">
+    </form>
 
 <script src="{% static '/cloud/js/index.js' %}"></script>
 </body>
