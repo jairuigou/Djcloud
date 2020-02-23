@@ -2,3 +2,10 @@ __pycache__/
 *auto*
 *000*
 settings.py
+front/build/*
+front/node_modules/*
+front/config/*
+front/src/assets/*
+*.png
+*.ico
+

@@ -13,6 +13,21 @@ SESSION_TIME = 100000
 ROOT_URL = '/'
 #views
 @ensure_csrf_cookie
+def api_verify(request):
+    data = {
+        'status' : 'login_failed'
+    }
+    if request.user.is_authenticated:
+        data['status'] = 'logged'
+        return JsonResponse(data)
+    username = request.POST['username']
+    password = request.POST['password']
+    user = authenticate(username=username,password=password)
+    if user is not None:
+        login(request,user)
+        request.session.set_expiry(SESSION_TIME)
+        data['status'] = 'login_ok'
+    return JsonResponse(data) 
 def index_test(request):
     if request.user.is_authenticated:
         filelist = Filepath.objects.filter(owner = request.user.username)
@@ -51,7 +66,7 @@ def index_get(request):
         }
         return render(request,'cloud/clientarea.html',context)
     else:
-        return render(request,'cloud/index.html')
+        return render(request,'dist/index.html')
 
 def verify_ajax(request):
     data = {
