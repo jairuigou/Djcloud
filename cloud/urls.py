@@ -9,4 +9,5 @@ urlpatterns = [
         path('remove',views.remove_post,name='remove_post'),
 	re_path(r'^download/$',views.download_get,name='download_get'),
         path('verify',views.api_verify,name='api_verify'),
+        path('infodata',views.api_infodata,name="api_infodata"),
 ] 

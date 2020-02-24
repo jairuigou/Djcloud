@@ -9,7 +9,7 @@
     </div>
 
     <div id="client" v-else>
-      <h1> Client</h1>
+      <filearea ></filearea> 
     </div>
   </div>
 
@@ -17,16 +17,16 @@
 
 <script>
 import LoginForm from './components/LoginForm'
-import dCard from './components/dCard'
+import filearea from './components/FileArea'
 export default {
   name: 'App',
   components: {
     LoginForm,
-    dCard
+    filearea
   },
   data(){
     return{
-      logstatus:true
+      logstatus:false,
     }
   },
   methods:{
