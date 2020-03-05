@@ -9,7 +9,7 @@
     </div>
 
     <div id="client" v-else>
-      <filearea ></filearea> 
+      <filearea v-on:statuschanged="changestatus"></filearea> 
     </div>
   </div>
 
@@ -26,8 +26,20 @@ export default {
   },
   data(){
     return{
-      logstatus:false,
+      logstatus:true,
     }
+  },
+  beforeCreate:function(){
+    this.axios({
+      url:'api/checkstatus',
+      method:'get',
+      headers :{'Content-Type':'application/x-www-form-urlencoded'}
+    }).then(response =>{
+        var status = response.data['status']
+        console.log(status)
+        if(status === 'not_logged')
+          this.logstatus = false;
+    })
   },
   methods:{
     changestatus:function(status){

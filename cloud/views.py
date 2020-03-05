@@ -28,6 +28,23 @@ def api_verify(request):
         request.session.set_expiry(SESSION_TIME)
         data['status'] = 'login_ok'
     return JsonResponse(data) 
+def api_checkstatus(request):
+    data = {
+        'status':'not_logged'
+    }
+    if request.user.is_authenticated:
+        data['status'] = 'logged'
+    return JsonResponse(data)
+def api_logout(request):
+    data = {
+        'status':'not_logged'
+    }
+    requeststatus = request.POST['status']
+    if request.user.is_authenticated:
+        logout(request)
+        data['status'] = 'logout_ok'
+    return JsonResponse(data)
+
 def api_infodata(request):
     data = {
         'status':'not_logged',
@@ -43,6 +60,8 @@ def api_infodata(request):
             dic['date'] = li.uploaddate
             data[i] = dic
     return JsonResponse(data)
+
+
 def index_test(request):
     if request.user.is_authenticated:
         filelist = Filepath.objects.filter(owner = request.user.username)

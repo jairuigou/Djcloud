@@ -64,6 +64,7 @@ export default {
             }
         };
     },
+    
     methods:{
         onSubmit(formName){
             this.$refs[formName].validate((valid)=>{
@@ -80,17 +81,16 @@ export default {
 				        data: formdata,
 				        headers :{'Content-Type':'application/x-www-form-urlencoded'}
 			        }).then(response => {
-                        var status = response.data['status']
+                        var status = response.data['status'];
                         if(status == "login_ok" || status == "logged"){
-                            alert("login success")
                             this.$emit('statuschanged',true);
                         }
                         else{
-                            alert("login failed")
+                            alert("login failed");
                         }
                     })
                     .catch(error=>{
-                        alert("request error")
+                        alert("request error");
                     }) 
                 }
                 else{
@@ -111,6 +111,7 @@ export default {
             }
             return "";
         },
+        
     }
 
 }

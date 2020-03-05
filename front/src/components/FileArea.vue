@@ -1,10 +1,7 @@
 <template>
     <el-container>
         <el-container>
-        <el-aside width="110px"> 
-            <el-row type="flex" justify="center">
-                <el-avatar shape="circle" icon="el-icon-user" :size="70"></el-avatar>
-            </el-row>
+        <el-aside width="100px"> 
             <el-row class="toptoucharea">
                 <el-row type="flex" justify="center" align="middle">
                 <i class="el-icon-upload2"></i>
@@ -37,12 +34,20 @@
                 <el-button type="text" class="textbutton">other</el-button>
                 </el-row>
             </el-row>
-            <el-row class="bottomtoucharea" >
+            <el-row class="middletoucharea" >
                 <el-row type="flex" justify="center" align="middle">
                 <i class="el-icon-refresh"></i>
                 </el-row>
                 <el-row type="flex" justify="center">
                 <el-button type="text" class="textbutton" @click="changestatus()">refresh</el-button>
+                </el-row>
+            </el-row>
+            <el-row class="bottomtoucharea" >
+                <el-row type="flex" justify="center" align="middle">
+                <i class="el-icon-switch-button"></i>
+                </el-row>
+                <el-row type="flex" justify="center">
+                <el-button type="text" class="textbutton" @click="logout()">login out</el-button>
                 </el-row>
             </el-row>
         </el-aside>
@@ -80,6 +85,9 @@ export default {
             tableData:[]
         }
     },
+    mounted:function(){
+        this.reloadFlag = !this.reloadFlag;
+    },
     watch:{
         reloadFlag:function() {
             this.axios({
@@ -88,7 +96,7 @@ export default {
             }).then(response =>{
                 var status = response.data['status'];
                 if(status == "not_logged"){
-                    alert("not logged");
+                    this.$emit("statuschanged",false);
                 }
                 else{
                     var data = response.data;
@@ -112,6 +120,36 @@ export default {
     methods:{
         changestatus(){
             this.reloadFlag = !this.reloadFlag;
+        },
+        logout(){
+            var token = this.getcsrftoken('csrftoken');
+            var formdata = new FormData();
+            formdata.append('csrfmiddlewaretoken',token);
+            formdata.append('status','logout');
+            this.axios({
+                url: 'api/logout',
+                method:'post',
+                data:formdata,
+                headers :{'Content-Type':'application/x-www-form-urlencoded'}
+            }).then(response =>{
+                this.$emit("statuschanged",false);
+            })
+            .catch(error =>{
+                console.log("logout request error");
+            })
+        },
+        getcsrftoken: function(name){
+            if(document.cookie && document.cookie!=''){
+                var cookies = document.cookie.split(';');
+                for( var i=0;i<cookies.length;i++){
+                    var cookie = cookies[i];
+                    var kk = cookie.split('=');
+                    if( kk[0] == name){
+                        return kk[1];
+                    }
+                } 
+            }
+            return "";
         }
     }
 }
@@ -125,7 +163,7 @@ export default {
     border-style: solid;
     border-width:1px 1px 1px 1px ; 
     border-color: #ebeef5;
-    font-size: 40px;
+    font-size: 30px;
     color:#606255;
 }
 .toptoucharea:hover{
@@ -138,7 +176,7 @@ export default {
     border-style: solid;
     border-width:1px 1px 0px 1px ; 
     border-color: #ebeef5;
-    font-size: 40px;
+    font-size: 30px;
     color:#606255;
 }
 .middletoucharea:hover{
@@ -151,7 +189,7 @@ export default {
     border-style: solid;
     border-width:1px 1px 1px 1px ; 
     border-color: #ebeef5;
-    font-size: 40px;
+    font-size: 30px;
     color:#606266;
 }
 .bottomtoucharea:hover{
