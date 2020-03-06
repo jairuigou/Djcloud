@@ -4,23 +4,23 @@
         <el-aside width="100px"> 
             <el-row class="toptoucharea">
                 <el-row type="flex" justify="center" align="middle">
-                <i class="el-icon-upload2"></i>
+                <i class="el-icon-upload2" @click="toupload()"></i>
                 </el-row>
                 <el-row type="flex" justify="center">
-                <el-button type="text" class="textbutton">upload</el-button>
+                <el-button type="text" class="textbutton" @click="toupload()">upload</el-button>
                 </el-row>
             </el-row>
             <el-row class="middletoucharea" >
                 <el-row type="flex" justify="center" align="middle">
-                <i class="el-icon-picture-outline"></i>
+                <i class="el-icon-picture-outline" @click="topicture()"></i>
                 </el-row>
                 <el-row type="flex" justify="center">
-                <el-button type="text" class="textbutton">picture</el-button>
+                <el-button type="text" class="textbutton" @click="topicture()">picture</el-button>
                 </el-row>
             </el-row>
             <el-row class="middletoucharea" >
                 <el-row type="flex" justify="center" align="middle">
-                <i class="el-icon-document"></i>
+                <i class="el-icon-document" ></i>
                 </el-row>
                 <el-row type="flex" justify="center">
                 <el-button type="text" class="textbutton">document</el-button>
@@ -36,7 +36,7 @@
             </el-row>
             <el-row class="middletoucharea" >
                 <el-row type="flex" justify="center" align="middle">
-                <i class="el-icon-refresh"></i>
+                <i class="el-icon-refresh " @click="changestatus()"></i>
                 </el-row>
                 <el-row type="flex" justify="center">
                 <el-button type="text" class="textbutton" @click="changestatus()">refresh</el-button>
@@ -44,7 +44,7 @@
             </el-row>
             <el-row class="bottomtoucharea" >
                 <el-row type="flex" justify="center" align="middle">
-                <i class="el-icon-switch-button"></i>
+                <i class="el-icon-switch-button" @click="logout()"></i>
                 </el-row>
                 <el-row type="flex" justify="center">
                 <el-button type="text" class="textbutton" @click="logout()">login out</el-button>
@@ -54,7 +54,7 @@
         </el-container>
         <el-container>
         <el-header>
-            <el-input 
+            <el-input v-if="playarea!='upload'" 
                 placeholder="search" 
                 suffix-icon="el-icon-search" 
                 clearable
@@ -62,8 +62,9 @@
             ></el-input>
         </el-header>
         <el-main>
-            <el-table
+            <el-table v-if="playarea=='fileplay'"
             :data="tableData">
+            <i class="el-icon-upload"></i>
                 <el-table-column label="filename" prop="name">
                 </el-table-column>
                 <el-table-column label="filetype" prop="type">
@@ -73,6 +74,20 @@
                 <el-table-column label="date" prop="date">
                 </el-table-column>
             </el-table>
+
+            <div v-if="playarea=='upload'">
+            <el-upload
+                action=""
+                ref="upload"
+                :http-request="uploadrequest"
+                :auto-upload="false"
+                drag
+            >
+            <i class="el-icon-upload"></i>
+            <div class="el-upload__text">Drop file here or<em>click to select</em></div>
+            </el-upload>
+            <el-button @click="upload()">upload</el-button>
+            </div>
         </el-main>
         </el-container>
     </el-container>    
@@ -82,6 +97,7 @@ export default {
     data(){
         return{
             reloadFlag:false,
+            playarea:"fileplay",
             tableData:[]
         }
     },
@@ -120,6 +136,38 @@ export default {
     methods:{
         changestatus(){
             this.reloadFlag = !this.reloadFlag;
+        },
+        toupload(){
+            this.playarea = 'upload';
+        },
+        topicture(){
+            this.playarea = 'fileplay';
+        },
+        upload(){
+            this.$refs.upload.submit();
+        },
+        uploadrequest(file){
+            var token = this.getcsrftoken('csrftoken');
+            var formdata = new FormData();
+            formdata.append('csrfmiddlewaretoken',token);
+            formdata.append('file',file.file);
+            this.axios({
+                url: 'api/uploadsmall',
+                method:'post',
+                data:formdata,
+                headers :{'Content-Type':'application/x-www-form-urlencoded'}
+            }).then(response =>{
+                var status = response.data['status'];
+                if(status ==='not_logged')
+                    this.$emit("statuschanged",false);
+                else if(status==='upload_ok')
+                    this.changestatus();
+                else
+                    console.log(status);
+            })
+            .catch(error =>{
+                console.log("upload request error");
+            })
         },
         logout(){
             var token = this.getcsrftoken('csrftoken');

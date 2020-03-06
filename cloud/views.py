@@ -61,7 +61,6 @@ def api_infodata(request):
             data[i] = dic
     return JsonResponse(data)
 
-
 def index_test(request):
     if request.user.is_authenticated:
         filelist = Filepath.objects.filter(owner = request.user.username)
