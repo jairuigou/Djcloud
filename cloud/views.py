@@ -186,11 +186,11 @@ def remove_post(request):
         return JsonResponse(data)
     filename = request.POST['file']
     username = request.user.username 
-    hasFile = Filepath.objects.filter(filename=filename)
+    hasFile = Filepath.objects.filter(viewname=filename)
     if hasFile:
         hasFile.delete() 
         rm_file(username,filename)
-        data['status'] = 'delele_ok'
+        data['status'] = 'delete_ok'
     return JsonResponse(data)
 
 def download_get(request):
