@@ -44,7 +44,6 @@ def api_logout(request):
         logout(request)
         data['status'] = 'logout_ok'
     return JsonResponse(data)
-
 def api_infodata(request):
     data = {
         'status':'not_logged',
@@ -54,74 +53,14 @@ def api_infodata(request):
         filelist = Filepath.objects.filter(owner=request.user.username)
         for i,li in enumerate(filelist):
             dic = {}
+            dic['filename'] = li.filename
             dic['name'] = li.viewname
             dic['size'] = li.viewsize
             dic['type'] = li.viewtype
             dic['date'] = li.uploaddate
             data[i] = dic
     return JsonResponse(data)
-
-def index_test(request):
-    if request.user.is_authenticated:
-        filelist = Filepath.objects.filter(owner = request.user.username)
-        context = {
-                'username' : request.user.username,
-                'fileList' : filelist,
-        }
-        return render(request,'cloud/clientarea.html',context)
-    elif request.method == 'POST':
-        form = LoginForm(request.POST)
-        if form.is_valid():
-            formdata = form.cleaned_data
-            user = authenticate(username=formdata['username'],
-                                password=formdata['password'])
-            if user is not None:
-                login(request,user)
-                request.session.set_expiry(SESSION_TIME)
-                filelist = Filepath.objects.filter(owner = request.user.username)
-                context = {
-                    'username' : request.user.username,
-                    'fileList' : filelist,
-                }
-                return render(request,'cloud/clientarea.html',context)               
-            else:
-                return render(request,'cloud/index.html',{'form':form})
-    else:
-        form = LoginForm()
-        return render(request,'cloud/index.html',{'form':form})
-   
-def index_get(request):
-    if request.user.is_authenticated:
-        filelist = Filepath.objects.filter(owner = request.user.username)
-        context = {
-                'username' : request.user.username,
-                'fileList' : filelist,
-        }
-        return render(request,'cloud/clientarea.html',context)
-    else:
-        return render(request,'dist/index.html')
-
-def verify_ajax(request):
-    data = {
-            'status' : 'login_failed'
-    }
-    if request.user.is_authenticated:
-        data['status'] = 'logged'
-        return JsonResponse(data)
-    username = request.POST['username']
-    password = request.POST['password']
-    user = authenticate(username=username,password=password)
-    if user is not None:
-        login(request,user)
-        request.session.set_expiry(SESSION_TIME)
-        data['status'] = 'login_ok'
-    return JsonResponse(data)
-    
-def logout_get(request):
-    logout(request) 
-    return HttpResponseRedirect(ROOT_URL)    
-
-def upload_smallfile_post(request):
+def api_upload_smallfile(request):
     data = {
             'status': 'upload_failed',
     }
@@ -148,6 +87,35 @@ def upload_smallfile_post(request):
         obj.save()
         data['status'] = 'upload_ok'
     return JsonResponse(data)
+def api_remove(request):
+    data = { 
+            'status' : 'delete_failed'
+    }
+    if not request.user.is_authenticated:
+        data['status'] = 'not_logged'
+        return JsonResponse(data)
+    filename = request.POST['file']
+    username = request.user.username 
+    hasFile = Filepath.objects.filter(filename=filename)
+    if hasFile and hasFile[0].owner == username:
+        hasFile.delete() 
+        rm_file(username,filename)
+        data['status'] = 'delete_ok'
+    return JsonResponse(data)
+
+def api_emit(request):
+    if not request.user.is_authenticated:
+        return HttpResponse(status_code="502")
+    filename = request.POST['file']
+    username = request.user.username
+    hasFile = Filepath.objects.filter(filename=filename)
+    if not hasFile or hasFile[0].owner != username:
+        return HttpResponse(status_code="404")
+    if not is_hasfile(username,filename):
+        return HttpResponse(status_code="404")
+    response = FileResponse( open(FILE_SAVE_PATH+username+'/'+filename,'rb') )
+    return response
+
 
 def upload_largefile_post(request):
     data = {
@@ -177,21 +145,7 @@ def upload_largefile_post(request):
             data['status'] = 'upload_slice_ok'
     return JsonResponse(data)
 
-def remove_post(request):
-    data = { 
-            'status' : 'delete_failed'
-    }
-    if not request.user.is_authenticated:
-        data['status'] = 'not_logged'
-        return JsonResponse(data)
-    filename = request.POST['file']
-    username = request.user.username 
-    hasFile = Filepath.objects.filter(viewname=filename)
-    if hasFile:
-        hasFile.delete() 
-        rm_file(username,filename)
-        data['status'] = 'delete_ok'
-    return JsonResponse(data)
+
 
 def download_get(request):
     if not request.user.is_authenticated:

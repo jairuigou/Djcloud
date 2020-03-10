@@ -1,12 +1,12 @@
 <template>
     <el-container>
         <el-main>
-            <el-row class="funcbutton">
-                <el-button class="fbutton" icon="el-icon-search" circle></el-button> 
-                <el-button class="fbutton" type="primary" icon="el-icon-upload" circle @click="toupload()"></el-button>  
-                <el-button class="fbutton" type="danger" icon="el-icon-switch-button" circle @click="logout()"></el-button>
+            <el-row class="funcbutton" :gutter="0">
+                <el-col :span="1" :offset="19"><el-button class="fbutton" icon="el-icon-search" circle></el-button> </el-col>
+                <el-col :span="1"><el-button class="fbutton" type="primary" icon="el-icon-upload" circle @click="toupload()"></el-button>  </el-col>
+                <el-col :span="1"><el-button class="fbutton" type="danger" icon="el-icon-switch-button" circle @click="logout()"></el-button></el-col>
             </el-row>
-            <el-row v-if="playarea=='fileplay'">
+            <el-row v-if="playarea==false">
                 <el-table 
                 :data="tableData">
                     <el-table-column label="Filename" prop="name">
@@ -22,6 +22,8 @@
                     </el-table-column>
                     <el-table-column label="Operations">
                         <template slot-scope="scope">
+                            <el-button size='mini' icon="el-icon-view" circle
+                            ></el-button>
                             <el-button size='mini' type="primary" icon="el-icon-download" circle
                             @click="handleDownload(scope.row)"></el-button>
                             <el-button size='mini' type="danger" icon="el-icon-delete" circle
@@ -31,7 +33,7 @@
                 </el-table>
             </el-row>
 
-            <div v-if="playarea=='upload'">
+            <div v-else>
             <el-upload
                 action=""
                 ref="upload"
@@ -52,9 +54,9 @@ export default {
     data(){
         return{
             reloadFlag:false,
-            playarea:"fileplay",
+            playarea:false,
             tableData:[],
-            typefilt:[{ text: 'PNG', value: 'PNG' }, { text: 'jpg', value: 'jpg' }]
+            typefilt:[]
         }
     },
     mounted:function(){
@@ -86,6 +88,7 @@ export default {
                     };
                     for(var i=0;i<attr.length-1;i++){
                         var tmpOb = {},tmpOb1={};
+                        tmpOb['filename'] = data[i]['filename'];
                         tmpOb['name'] = data[i]['name'];
                         tmpOb['type'] = data[i]['type'];
                         tmpOb['size'] = data[i]['size'];
@@ -110,13 +113,36 @@ export default {
             return row.type === value;
         },
         handleDownload(row){
-            console.log(row); 
+            var token = this.getcsrftoken('csrftoken');
+            var formdata = new FormData();
+            formdata.append('csrfmiddlewaretoken',token);
+            formdata.append('file',row['filename']);
+            this.axios({
+                url: 'api/download',
+                method:'post',
+                data:formdata,
+                headers :{'Content-Type':'application/x-www-form-urlencoded'},
+                responseType:'blob'
+            }).then(response =>{
+                var blob = new Blob([response.data])
+                var elink = document.createElement('a');
+                elink.download = row['filename'];
+                elink.style.display = 'none';
+                elink.href = URL.createObjectURL(blob);
+                document.body.appendChild(elink);
+                elink.click()
+                URL.revokeObjectURL(elink.href);// 释放URL 对象
+                document.body.removeChild(elink)
+            })
+            .catch(error =>{
+                console.log("download request error");
+            })
         },
         handleDelete(row){
             var token = this.getcsrftoken('csrftoken');
             var formdata = new FormData();
             formdata.append('csrfmiddlewaretoken',token);
-            formdata.append('file',row['name']);
+            formdata.append('file',row['filename']);
             this.axios({
                 url: 'api/remove',
                 method:'post',
@@ -136,7 +162,7 @@ export default {
             })
         },
         toupload(){
-            this.playarea = 'upload';
+            this.playarea = !this.playarea;
         },
         upload(){
             this.$refs.upload.submit();
@@ -202,10 +228,11 @@ export default {
     width: 300px;
 }
 .funcbutton{
-    margin-top: 10px;
-    margin-bottom: 10px;
+    margin-top: 20px;
+    margin-bottom: 5px;
 }
 .fbutton{
-    font-size: 20px;
+    font-size: 15px;
 }
+
 </style>
