@@ -26,12 +26,30 @@
                             ></el-button>
                             <el-button size='mini' type="primary" icon="el-icon-download" circle
                             @click="handleDownload(scope.row)"></el-button>
-                            <el-button size='mini' type="danger" icon="el-icon-delete" circle
-                            @click="handleDelete(scope.row)"></el-button>
+                            <el-popover
+                            placement="bottom"
+                            width="200"
+                            trigger="click"
+                            v-model="scope.row.tipvisible"
+                            >
+                            <p> <i class="el-icon-info" style="color:red"></i> Sure to delete this?</p>
+                                <div style="text-align:right;margin:0">
+                                    <el-button size="mini" type="text" @click="scope.row.tipvisible=false;">cancel</el-button>
+                                    <el-button type="primary" size="mini" @click="handleDelete(scope.row)">confirm</el-button>
+                                </div>
+                            <el-button slot="reference"
+                                size='mini'
+                                type='danger'
+                                icon="el-icon-delete"
+                                circle
+                            ></el-button>
+                            </el-popover>
+                            
                         </template>
                     </el-table-column>
                 </el-table>
             </el-row>
+
 
             <div v-else>
             <el-upload
@@ -47,7 +65,10 @@
             <el-button @click="upload()">upload</el-button>
             </div>
         </el-main>
+
+
     </el-container>    
+
 </template>
 <script>
 export default {
@@ -93,6 +114,7 @@ export default {
                         tmpOb['type'] = data[i]['type'];
                         tmpOb['size'] = data[i]['size'];
                         tmpOb['date'] = data[i]['date'];
+                        tmpOb['tipvisible'] = false;
                         this.tableData.push(tmpOb);
                         tmpOb1['text'] = data[i]['type'];
                         tmpOb1['value'] = data[i]['type'];
@@ -106,6 +128,11 @@ export default {
         }
     },
     methods:{
+        test(){
+            console.log(this.kvisible);
+            this.kvisible = !this.kvisible;
+            console.log(this.kvisible);
+        },
         changestatus(){
             this.reloadFlag = !this.reloadFlag;
         },
