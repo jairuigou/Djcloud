@@ -83,14 +83,16 @@ export default {
 			        }).then(response => {
                         var status = response.data['status'];
                         if(status == "login_ok" || status == "logged"){
+                            this.$message.success("Success");
                             this.$emit('statuschanged',true);
                         }
                         else{
-                            alert("login failed");
+                            this.bloading=false;
+                            this.$message.error("Incorrect username or password");
                         }
                     })
                     .catch(error=>{
-                        alert("request error");
+                        this.$message.error("request error");
                     }) 
                 }
                 else{
