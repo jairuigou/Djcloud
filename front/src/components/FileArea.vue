@@ -1,81 +1,57 @@
 <template>
     <el-container>
-        <el-container>
-        <el-aside width="100px"> 
-            <el-row class="toptoucharea">
-                <el-row type="flex" justify="center" align="middle">
-                <i class="el-icon-upload2" @click="toupload()"></i>
-                </el-row>
-                <el-row type="flex" justify="center">
-                <el-button type="text" class="textbutton" @click="toupload()">upload</el-button>
-                </el-row>
-            </el-row>
-            <el-row class="middletoucharea" >
-                <el-row type="flex" justify="center" align="middle">
-                <i class="el-icon-picture-outline" @click="topicture()"></i>
-                </el-row>
-                <el-row type="flex" justify="center">
-                <el-button type="text" class="textbutton" @click="topicture()">picture</el-button>
-                </el-row>
-            </el-row>
-            <el-row class="middletoucharea" >
-                <el-row type="flex" justify="center" align="middle">
-                <i class="el-icon-document" ></i>
-                </el-row>
-                <el-row type="flex" justify="center">
-                <el-button type="text" class="textbutton">document</el-button>
-                </el-row>
-            </el-row>
-            <el-row class="middletoucharea" >
-                <el-row type="flex" justify="center" align="middle">
-                <i class="el-icon-paperclip"></i>
-                </el-row>
-                <el-row type="flex" justify="center">
-                <el-button type="text" class="textbutton">other</el-button>
-                </el-row>
-            </el-row>
-            <el-row class="middletoucharea" >
-                <el-row type="flex" justify="center" align="middle">
-                <i class="el-icon-refresh " @click="changestatus()"></i>
-                </el-row>
-                <el-row type="flex" justify="center">
-                <el-button type="text" class="textbutton" @click="changestatus()">refresh</el-button>
-                </el-row>
-            </el-row>
-            <el-row class="bottomtoucharea" >
-                <el-row type="flex" justify="center" align="middle">
-                <i class="el-icon-switch-button" @click="logout()"></i>
-                </el-row>
-                <el-row type="flex" justify="center">
-                <el-button type="text" class="textbutton" @click="logout()">login out</el-button>
-                </el-row>
-            </el-row>
-        </el-aside>
-        </el-container>
-        <el-container>
-        <el-header>
-            <el-input v-if="playarea!='upload'" 
-                placeholder="search" 
-                suffix-icon="el-icon-search" 
-                clearable
-                class="searchinput"
-            ></el-input>
-        </el-header>
         <el-main>
-            <el-table v-if="playarea=='fileplay'"
-            :data="tableData">
-            <i class="el-icon-upload"></i>
-                <el-table-column label="filename" prop="name">
-                </el-table-column>
-                <el-table-column label="filetype" prop="type">
-                </el-table-column>
-                <el-table-column label="filesize" prop="size">
-                </el-table-column>
-                <el-table-column label="date" prop="date">
-                </el-table-column>
-            </el-table>
+            <el-row class="funcbutton" :gutter="0">
+                <el-col :span="1" :offset="19"><el-button class="fbutton" icon="el-icon-search" circle></el-button> </el-col>
+                <el-col :span="1"><el-button class="fbutton" type="primary" icon="el-icon-upload" circle @click="toupload()"></el-button>  </el-col>
+                <el-col :span="1"><el-button class="fbutton" type="danger" icon="el-icon-switch-button" circle @click="logout()"></el-button></el-col>
+            </el-row>
+            <el-row v-if="playarea==false">
+                <el-table 
+                :data="tableData">
+                    <el-table-column label="Filename" prop="name">
+                    </el-table-column>
+                    <el-table-column label="Filetype" prop="type"
+                        :filters="typefilt"
+                        :filter-method="typefiltmethod">
+                    </el-table-column>
+                    <el-table-column label="Filesize" prop="size"
+                        sortable>
+                    </el-table-column>
+                    <el-table-column label="Date" prop="date">
+                    </el-table-column>
+                    <el-table-column label="Operations">
+                        <template slot-scope="scope">
+                            <el-button size='mini' icon="el-icon-view" circle
+                            ></el-button>
+                            <el-button size='mini' type="primary" icon="el-icon-download" circle
+                            @click="handleDownload(scope.row)"></el-button>
+                            <el-popover
+                            placement="bottom"
+                            width="200"
+                            trigger="click"
+                            v-model="scope.row.tipvisible"
+                            >
+                            <p> <i class="el-icon-info" style="color:red"></i> Sure to delete this?</p>
+                                <div style="text-align:right;margin:0">
+                                    <el-button size="mini" type="text" @click="scope.row.tipvisible=false;">cancel</el-button>
+                                    <el-button type="primary" size="mini" @click="handleDelete(scope.row)">confirm</el-button>
+                                </div>
+                            <el-button slot="reference"
+                                size='mini'
+                                type='danger'
+                                icon="el-icon-delete"
+                                circle
+                            ></el-button>
+                            </el-popover>
+                            
+                        </template>
+                    </el-table-column>
+                </el-table>
+            </el-row>
 
-            <div v-if="playarea=='upload'">
+
+            <div v-else>
             <el-upload
                 action=""
                 ref="upload"
@@ -89,16 +65,19 @@
             <el-button @click="upload()">upload</el-button>
             </div>
         </el-main>
-        </el-container>
+
+
     </el-container>    
+
 </template>
 <script>
 export default {
     data(){
         return{
             reloadFlag:false,
-            playarea:"fileplay",
-            tableData:[]
+            playarea:false,
+            tableData:[],
+            typefilt:[]
         }
     },
     mounted:function(){
@@ -118,13 +97,28 @@ export default {
                     var data = response.data;
                     var attr = Object.keys(response.data);
                     this.tableData = [];
+                    this.typefilt = [];
+                    this.typefilt.pushone = function(tmp){
+                        for(var i=0;i<this.length;i++)
+                        {
+                            if(tmp['text'] == this[i]['text'])
+                                break;
+                        }
+                        if(i==this.length)
+                            this.push(tmp);
+                    };
                     for(var i=0;i<attr.length-1;i++){
-                        var tmpOb = {};
+                        var tmpOb = {},tmpOb1={};
+                        tmpOb['filename'] = data[i]['filename'];
                         tmpOb['name'] = data[i]['name'];
                         tmpOb['type'] = data[i]['type'];
                         tmpOb['size'] = data[i]['size'];
                         tmpOb['date'] = data[i]['date'];
+                        tmpOb['tipvisible'] = false;
                         this.tableData.push(tmpOb);
+                        tmpOb1['text'] = data[i]['type'];
+                        tmpOb1['value'] = data[i]['type'];
+                        this.typefilt.pushone(tmpOb1);
                     }
                 }
             })
@@ -134,14 +128,68 @@ export default {
         }
     },
     methods:{
+        test(){
+            console.log(this.kvisible);
+            this.kvisible = !this.kvisible;
+            console.log(this.kvisible);
+        },
         changestatus(){
             this.reloadFlag = !this.reloadFlag;
         },
-        toupload(){
-            this.playarea = 'upload';
+        typefiltmethod(value,row){
+            return row.type === value;
         },
-        topicture(){
-            this.playarea = 'fileplay';
+        handleDownload(row){
+            var token = this.getcsrftoken('csrftoken');
+            var formdata = new FormData();
+            formdata.append('csrfmiddlewaretoken',token);
+            formdata.append('file',row['filename']);
+            this.axios({
+                url: 'api/download',
+                method:'post',
+                data:formdata,
+                headers :{'Content-Type':'application/x-www-form-urlencoded'},
+                responseType:'blob'
+            }).then(response =>{
+                var blob = new Blob([response.data])
+                var elink = document.createElement('a');
+                elink.download = row['filename'];
+                elink.style.display = 'none';
+                elink.href = URL.createObjectURL(blob);
+                document.body.appendChild(elink);
+                elink.click()
+                URL.revokeObjectURL(elink.href);// 释放URL 对象
+                document.body.removeChild(elink)
+            })
+            .catch(error =>{
+                console.log("download request error");
+            })
+        },
+        handleDelete(row){
+            var token = this.getcsrftoken('csrftoken');
+            var formdata = new FormData();
+            formdata.append('csrfmiddlewaretoken',token);
+            formdata.append('file',row['filename']);
+            this.axios({
+                url: 'api/remove',
+                method:'post',
+                data:formdata,
+                headers :{'Content-Type':'application/x-www-form-urlencoded'}
+            }).then(response =>{
+                var status = response.data['status'];
+                if(status ==='not_logged')
+                    this.$emit("statuschanged",false);
+                else if(status==='delete_ok')
+                    this.changestatus();
+                else
+                    console.log(status);
+            })
+            .catch(error =>{
+                console.log("delete request error");
+            })
+        },
+        toupload(){
+            this.playarea = !this.playarea;
         },
         upload(){
             this.$refs.upload.submit();
@@ -206,50 +254,12 @@ export default {
 .searchinput{
     width: 300px;
 }
-.toptoucharea{
-    margin-top: 10px;
-    border-style: solid;
-    border-width:1px 1px 1px 1px ; 
-    border-color: #ebeef5;
-    font-size: 30px;
-    color:#606255;
+.funcbutton{
+    margin-top: 20px;
+    margin-bottom: 5px;
 }
-.toptoucharea:hover{
-    color: #409eff;
+.fbutton{
+    font-size: 15px;
 }
-.toptoucharea:hover .textbutton{
-    color:#409eff;
-}
-.middletoucharea{
-    border-style: solid;
-    border-width:1px 1px 0px 1px ; 
-    border-color: #ebeef5;
-    font-size: 30px;
-    color:#606255;
-}
-.middletoucharea:hover{
-    color: #409eff;
-}
-.middletoucharea:hover .textbutton{
-    color: #409eff;
-}
-.bottomtoucharea{
-    border-style: solid;
-    border-width:1px 1px 1px 1px ; 
-    border-color: #ebeef5;
-    font-size: 30px;
-    color:#606266;
-}
-.bottomtoucharea:hover{
-    color:#409eff;
-}
-.bottomtoucharea:hover .textbutton{
-    color: #409eff;
-}
-i[class*='el-icon']{
-    margin-top: 10px;
-}
-.textbutton{
-    color: #909399;
-}
+
 </style>
