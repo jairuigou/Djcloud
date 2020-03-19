@@ -11,5 +11,6 @@ urlpatterns = [
         path('checkstatus',views.api_checkstatus,name ='api_checkstatus'),
         path('logout',views.api_logout,name='api_logout'),
         path('remove',views.api_remove,name='api_remove'),
-        path('download',views.api_emit,name='api_emit')
+        path('download',views.api_emit,name='api_emit'),
+        path('view',views.api_view,name='api_view')
 ] 

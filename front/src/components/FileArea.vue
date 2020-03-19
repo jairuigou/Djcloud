@@ -23,7 +23,7 @@
                     <el-table-column label="Operations">
                         <template slot-scope="scope">
                             <el-button size='mini' icon="el-icon-view" circle
-                            ></el-button>
+                            @click="handleView(scope.row)"></el-button>
                             <el-button size='mini' type="primary" icon="el-icon-download" circle
                             @click="handleDownload(scope.row)"></el-button>
                             <el-popover
@@ -31,6 +31,7 @@
                             width="200"
                             trigger="click"
                             v-model="scope.row.tipvisible"
+                            style="margin-left:10px"
                             >
                             <p> <i class="el-icon-info" style="color:red"></i> Sure to delete this?</p>
                                 <div style="text-align:right;margin:0">
@@ -139,11 +140,22 @@ export default {
         typefiltmethod(value,row){
             return row.type === value;
         },
+        handleView(row){
+            if(row['type'] == 'jpg'){
+                this.download(row['filename'],1);
+            }
+            else{
+                this.download(row['filename'],2);
+            }
+        },
         handleDownload(row){
+            this.download(row['filename'],0);
+        },
+        download(filename,method){
             var token = this.getcsrftoken('csrftoken');
             var formdata = new FormData();
             formdata.append('csrfmiddlewaretoken',token);
-            formdata.append('file',row['filename']);
+            formdata.append('file',filename);
             this.axios({
                 url: 'api/download',
                 method:'post',
@@ -151,18 +163,29 @@ export default {
                 headers :{'Content-Type':'application/x-www-form-urlencoded'},
                 responseType:'blob'
             }).then(response =>{
-                var blob = new Blob([response.data])
                 var elink = document.createElement('a');
-                elink.download = row['filename'];
+                var blob;
+                if(method === 0){
+                    elink.download = filename;
+                    blob = new Blob([response.data]);
+                }
+                else if(method===1){
+                    blob = new Blob([response.data],{type:"image/jpeg"});
+                }
+                else{
+                    blob = new Blob([response.data]);
+                }
+                var url = URL.createObjectURL(blob);
                 elink.style.display = 'none';
-                elink.href = URL.createObjectURL(blob);
+                elink.href = url;
                 document.body.appendChild(elink);
                 elink.click()
-                URL.revokeObjectURL(elink.href);// 释放URL 对象
+                URL.revokeObjectURL(elink.href);
                 document.body.removeChild(elink)
             })
             .catch(error =>{
-                console.log("download request error");
+                this.$message.error("Error!");
+                this.$emit("statuschanged",false);
             })
         },
         handleDelete(row){
@@ -261,5 +284,6 @@ export default {
 .fbutton{
     font-size: 15px;
 }
+
 
 </style>
