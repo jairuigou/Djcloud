@@ -3,10 +3,10 @@
         <el-main>
             <el-row class="funcbutton" :gutter="0">
                 <el-col :span="1" :offset="19"><el-button class="fbutton" icon="el-icon-search" circle></el-button> </el-col>
-                <el-col :span="1"><el-button class="fbutton" type="primary" icon="el-icon-upload" circle @click="toupload()"></el-button>  </el-col>
+                <el-col :span="1"><el-button class="fbutton" type="primary" icon="el-icon-upload" circle @click="dialogUploadVisible = true"></el-button>  </el-col>
                 <el-col :span="1"><el-button class="fbutton" type="danger" icon="el-icon-switch-button" circle @click="logout()"></el-button></el-col>
             </el-row>
-            <el-row v-if="playarea==false">
+            <el-row>
                 <el-table 
                 :data="tableData">
                     <el-table-column label="Filename" prop="name">
@@ -23,7 +23,7 @@
                     <el-table-column label="Operations">
                         <template slot-scope="scope">
                             <el-button size='mini' icon="el-icon-view" circle
-                            ></el-button>
+                            @click="handleView(scope.row)"></el-button>
                             <el-button size='mini' type="primary" icon="el-icon-download" circle
                             @click="handleDownload(scope.row)"></el-button>
                             <el-popover
@@ -31,6 +31,7 @@
                             width="200"
                             trigger="click"
                             v-model="scope.row.tipvisible"
+                            style="margin-left:10px"
                             >
                             <p> <i class="el-icon-info" style="color:red"></i> Sure to delete this?</p>
                                 <div style="text-align:right;margin:0">
@@ -50,11 +51,9 @@
                 </el-table>
             </el-row>
 
-
-            <div v-else>
-            <el-upload
-                action=""
-                ref="upload"
+            <el-dialog title="Upload File" :visible.sync="dialogUploadVisible">
+            <el-upload action=""
+                ref="upload" 
                 :http-request="uploadrequest"
                 :auto-upload="false"
                 drag
@@ -63,7 +62,7 @@
             <div class="el-upload__text">Drop file here or<em>click to select</em></div>
             </el-upload>
             <el-button @click="upload()">upload</el-button>
-            </div>
+            </el-dialog>
         </el-main>
 
 
@@ -75,7 +74,7 @@ export default {
     data(){
         return{
             reloadFlag:false,
-            playarea:false,
+            dialogUploadVisible:false,
             tableData:[],
             typefilt:[]
         }
@@ -128,22 +127,25 @@ export default {
         }
     },
     methods:{
-        test(){
-            console.log(this.kvisible);
-            this.kvisible = !this.kvisible;
-            console.log(this.kvisible);
-        },
-        changestatus(){
-            this.reloadFlag = !this.reloadFlag;
-        },
         typefiltmethod(value,row){
             return row.type === value;
         },
+        handleView(row){
+            if(row['type'] == 'jpg'){
+                this.download(row['filename'],1);
+            }
+            else{
+                this.download(row['filename'],2);
+            }
+        },
         handleDownload(row){
+            this.download(row['filename'],0);
+        },
+        download(filename,method){
             var token = this.getcsrftoken('csrftoken');
             var formdata = new FormData();
             formdata.append('csrfmiddlewaretoken',token);
-            formdata.append('file',row['filename']);
+            formdata.append('file',filename);
             this.axios({
                 url: 'api/download',
                 method:'post',
@@ -151,18 +153,29 @@ export default {
                 headers :{'Content-Type':'application/x-www-form-urlencoded'},
                 responseType:'blob'
             }).then(response =>{
-                var blob = new Blob([response.data])
                 var elink = document.createElement('a');
-                elink.download = row['filename'];
+                var blob;
+                if(method === 0){
+                    elink.download = filename;
+                    blob = new Blob([response.data]);
+                }
+                else if(method===1){
+                    blob = new Blob([response.data],{type:"image/jpeg"});
+                }
+                else{
+                    blob = new Blob([response.data]);
+                }
+                var url = URL.createObjectURL(blob);
                 elink.style.display = 'none';
-                elink.href = URL.createObjectURL(blob);
+                elink.href = url;
                 document.body.appendChild(elink);
                 elink.click()
-                URL.revokeObjectURL(elink.href);// 释放URL 对象
+                URL.revokeObjectURL(elink.href);
                 document.body.removeChild(elink)
             })
             .catch(error =>{
-                console.log("download request error");
+                this.$message.error("Error!");
+                this.$emit("statuschanged",false);
             })
         },
         handleDelete(row){
@@ -180,16 +193,13 @@ export default {
                 if(status ==='not_logged')
                     this.$emit("statuschanged",false);
                 else if(status==='delete_ok')
-                    this.changestatus();
+                    this.reloadFlag = !this.reloadFlag;
                 else
                     console.log(status);
             })
             .catch(error =>{
                 console.log("delete request error");
             })
-        },
-        toupload(){
-            this.playarea = !this.playarea;
         },
         upload(){
             this.$refs.upload.submit();
@@ -203,19 +213,23 @@ export default {
                 url: 'api/uploadsmall',
                 method:'post',
                 data:formdata,
-                headers :{'Content-Type':'application/x-www-form-urlencoded'}
+                headers :{'Content-Type':'application/x-www-form-urlencoded'},
+                onUploadProgress: ProgressEvent=>{
+                    console.log(Math.round( (ProgressEvent.loaded * 100) / ProgressEvent.total ));
+                }
             }).then(response =>{
                 var status = response.data['status'];
                 if(status ==='not_logged')
                     this.$emit("statuschanged",false);
                 else if(status==='upload_ok')
-                    this.changestatus();
+                    this.reloadFlag = !this.reloadFlag;
                 else
-                    console.log(status);
+                    this.$message.error(status);   
             })
             .catch(error =>{
-                console.log("upload request error");
+                this.$message.error("upload request error");
             })
+            this.dialogUploadVisible = false;
         },
         logout(){
             var token = this.getcsrftoken('csrftoken');
@@ -261,5 +275,6 @@ export default {
 .fbutton{
     font-size: 15px;
 }
+
 
 </style>

@@ -116,6 +116,18 @@ def api_emit(request):
     response = FileResponse( open(FILE_SAVE_PATH+username+'/'+filename,'rb') )
     return response
 
+def api_view(request):
+    if not request.user.is_authenticated:
+        return HttpResponse(status_code="502")
+    filename = request.POST['file']
+    username = request.user.username
+    hasFile = Filepath.objects.filter(filename=filename)
+    if not hasFile or hasFile[0].owner != username:
+        return HttpResponse(status_code="404")
+    if not is_hasfile(username,filename):
+        return HttpResponse(status_code="404")
+    return HttpResponse( open(FILE_SAVE_PATH+username+'/'+filename,'rb'))
+    
 
 def upload_largefile_post(request):
     data = {
