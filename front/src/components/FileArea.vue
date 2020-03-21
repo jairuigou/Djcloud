@@ -3,10 +3,10 @@
         <el-main>
             <el-row class="funcbutton" :gutter="0">
                 <el-col :span="1" :offset="19"><el-button class="fbutton" icon="el-icon-search" circle></el-button> </el-col>
-                <el-col :span="1"><el-button class="fbutton" type="primary" icon="el-icon-upload" circle @click="toupload()"></el-button>  </el-col>
+                <el-col :span="1"><el-button class="fbutton" type="primary" icon="el-icon-upload" circle @click="dialogUploadVisible = true"></el-button>  </el-col>
                 <el-col :span="1"><el-button class="fbutton" type="danger" icon="el-icon-switch-button" circle @click="logout()"></el-button></el-col>
             </el-row>
-            <el-row v-if="playarea==false">
+            <el-row>
                 <el-table 
                 :data="tableData">
                     <el-table-column label="Filename" prop="name">
@@ -51,11 +51,9 @@
                 </el-table>
             </el-row>
 
-
-            <div v-else>
-            <el-upload
-                action=""
-                ref="upload"
+            <el-dialog title="Upload File" :visible.sync="dialogUploadVisible">
+            <el-upload action=""
+                ref="upload" 
                 :http-request="uploadrequest"
                 :auto-upload="false"
                 drag
@@ -64,7 +62,7 @@
             <div class="el-upload__text">Drop file here or<em>click to select</em></div>
             </el-upload>
             <el-button @click="upload()">upload</el-button>
-            </div>
+            </el-dialog>
         </el-main>
 
 
@@ -76,7 +74,7 @@ export default {
     data(){
         return{
             reloadFlag:false,
-            playarea:false,
+            dialogUploadVisible:false,
             tableData:[],
             typefilt:[]
         }
@@ -129,14 +127,6 @@ export default {
         }
     },
     methods:{
-        test(){
-            console.log(this.kvisible);
-            this.kvisible = !this.kvisible;
-            console.log(this.kvisible);
-        },
-        changestatus(){
-            this.reloadFlag = !this.reloadFlag;
-        },
         typefiltmethod(value,row){
             return row.type === value;
         },
@@ -203,16 +193,13 @@ export default {
                 if(status ==='not_logged')
                     this.$emit("statuschanged",false);
                 else if(status==='delete_ok')
-                    this.changestatus();
+                    this.reloadFlag = !this.reloadFlag;
                 else
                     console.log(status);
             })
             .catch(error =>{
                 console.log("delete request error");
             })
-        },
-        toupload(){
-            this.playarea = !this.playarea;
         },
         upload(){
             this.$refs.upload.submit();
@@ -226,19 +213,23 @@ export default {
                 url: 'api/uploadsmall',
                 method:'post',
                 data:formdata,
-                headers :{'Content-Type':'application/x-www-form-urlencoded'}
+                headers :{'Content-Type':'application/x-www-form-urlencoded'},
+                onUploadProgress: ProgressEvent=>{
+                    console.log(Math.round( (ProgressEvent.loaded * 100) / ProgressEvent.total ));
+                }
             }).then(response =>{
                 var status = response.data['status'];
                 if(status ==='not_logged')
                     this.$emit("statuschanged",false);
                 else if(status==='upload_ok')
-                    this.changestatus();
+                    this.reloadFlag = !this.reloadFlag;
                 else
-                    console.log(status);
+                    this.$message.error(status);   
             })
             .catch(error =>{
-                console.log("upload request error");
+                this.$message.error("upload request error");
             })
+            this.dialogUploadVisible = false;
         },
         logout(){
             var token = this.getcsrftoken('csrftoken');
