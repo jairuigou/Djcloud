@@ -1,15 +1,15 @@
 <template>
   
   <div id="app" >
-    <div id="login" v-if="logstatus===false">
+    <div id="login" v-if="loginstatus==false">
     <h1> DJCLoud</h1>
     <el-row type = "flex" class="loginform" >
-        <LoginForm v-on:statuschanged="changestatus"></LoginForm>
+        <LoginForm v-on:changestatus="changeloginstatus"></LoginForm>
     </el-row>
     </div>
 
     <div id="client" v-else>
-      <filearea v-on:statuschanged="changestatus"></filearea> 
+      <filearea v-on:relogin="relogin"></filearea> 
     </div>
   </div>
 
@@ -26,7 +26,7 @@ export default {
   },
   data(){
     return{
-      logstatus:true,
+      loginstatus:false,
     }
   },
   beforeCreate:function(){
@@ -35,15 +35,19 @@ export default {
       method:'get',
       headers :{'Content-Type':'application/x-www-form-urlencoded'}
     }).then(response =>{
-        var status = response.data['status']
-        console.log(status)
+        var status = response.data['status'];
         if(status === 'not_logged')
-          this.logstatus = false;
+          this.loginstatus = false;
+        else
+          this.loginstatus = true;
     })
   },
   methods:{
-    changestatus:function(status){
-      this.logstatus = status;
+    relogin(status){
+      this.loginstatus = false;
+    },
+    changeloginstatus(status){
+      this.loginstatus = status;
     }
   }
 }
