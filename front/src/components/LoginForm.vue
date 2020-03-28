@@ -84,7 +84,7 @@ export default {
                         var status = response.data['status'];
                         if(status == "login_ok" || status == "logged"){
                             this.$message.success("Success");
-                            this.$emit('statuschanged',true);
+                            this.$emit('changestatus',true);
                         }
                         else{
                             this.bloading=false;
