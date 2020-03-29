@@ -1,7 +1,8 @@
 __pycache__/
 *auto*
 *000*
-settings.py
+#setting
+Djcloud/settings/dev.py
 front/build/*
 front/node_modules/*
 front/src/assets/*
