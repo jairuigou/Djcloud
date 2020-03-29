@@ -4,7 +4,6 @@ from django.urls import reverse
 from django.contrib.auth import authenticate,login,logout
 from django.views.decorators.csrf import ensure_csrf_cookie
 from .models import Filepath
-from .forms import LoginForm
 import os,datetime,getpass
 
 FILE_SAVE_PATH = "/home/"+getpass.getuser()+"/cloudfile/"
@@ -157,22 +156,6 @@ def upload_largefile_post(request):
             data['status'] = 'upload_slice_ok'
     return JsonResponse(data)
 
-
-
-def download_get(request):
-    if not request.user.is_authenticated:
-        return HttpResponseRedirect(ROOT_URL) 
-    filename = request.GET.get('f')
-    username = request.user.username
-    hasFile = Filepath.objects.filter(filename=filename)
-    if hasFile:
-        filetype = hasFile[0].filetype
-        if(is_hasfile(username,filename)):
-            returnfile = open(FILE_SAVE_PATH+username+'/'+filename,'rb').read()
-            response = HttpResponse(returnfile,content_type=filetype)
-            response['Content-Disposition'] = 'attachment;filename='+filename
-            return response
-    return HttpResponseRedirect(ROOT_URL)
 
 
 #fun
