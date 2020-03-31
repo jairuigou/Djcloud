@@ -1,6 +1,8 @@
 <template>
   
-  <div id="app" >
+  <div id="app" v-if="checkingstatus==false" 
+    v-loading.fullscreen.lock="fullscreenLoading"
+  >
     <div id="login" v-if="loginstatus==false">
     <h1> DJCLoud</h1>
     <el-row type = "flex" class="loginform" >
@@ -18,6 +20,7 @@
 <script>
 import LoginForm from './components/LoginForm'
 import filearea from './components/FileArea'
+import { Loading } from 'element-ui'
 export default {
   name: 'App',
   components: {
@@ -27,9 +30,12 @@ export default {
   data(){
     return{
       loginstatus:false,
+      checkingstatus:true,
+      fullscreenLoading:true,
     }
   },
-  beforeCreate:function(){
+  mounted:function(){
+    //let loadingInstance = Loading.service({ fullscreen: true });
     this.axios({
       url:'api/checkstatus',
       method:'get',
@@ -40,6 +46,9 @@ export default {
           this.loginstatus = false;
         else
           this.loginstatus = true;
+        this.checkingstatus = false;
+        this.fullscreenLoading = false;
+     //   loadingInstance.close(); 
     })
   },
   methods:{
