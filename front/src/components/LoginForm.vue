@@ -92,6 +92,7 @@ export default {
                         }
                     })
                     .catch(error=>{
+                        this.bloading=false;
                         this.$message.error("request error");
                     }) 
                 }
