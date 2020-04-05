@@ -1,14 +1,28 @@
 <template>
     <el-container>
-        <el-main>
+        <el-header>
             <el-row class="funcbutton" :gutter="0">
                 <el-col :span="1" :offset="19"><el-button class="fbutton" icon="el-icon-search" circle></el-button> </el-col>
                 <el-col :span="1"><el-button class="fbutton" type="primary" icon="el-icon-upload" circle @click="dialogUploadVisible = true"></el-button>  </el-col>
                 <el-col :span="1"><el-button class="fbutton" type="danger" icon="el-icon-switch-button" circle @click="logout()"></el-button></el-col>
             </el-row>
-
+        </el-header>
+        <el-container>
+        <el-aside width="50px">
             <el-row>
+                <i class="el-icon-folder-opened" @click="viewAreaHook='table'"></i>
+            </el-row>
+            <el-row>
+                <i class="el-icon-picture-outline-round" @click="viewAreaHook='image'"></i>
+            </el-row>         
+        </el-aside>
+        <el-main>
+            <el-row v-if="viewAreaHook=='table'">
                <FileTable v-on:relogin="relogin"></FileTable>
+            </el-row>
+
+            <el-row v-if="viewAreaHook=='image'">
+                <ImageView></ImageView>
             </el-row>
 
             <el-dialog title="Upload File" :visible.sync="dialogUploadVisible">
@@ -24,6 +38,8 @@
             <el-button @click="upload()">upload</el-button>
             </el-dialog>
         </el-main>
+        </el-container>
+        
 
 
     </el-container>    
@@ -31,13 +47,16 @@
 </template>
 <script>
 import FileTable from "./FileTable"
+import ImageView from "./ImageView"
 export default {
     components: {
-        FileTable
+        FileTable,
+        ImageView
     },
     data(){
         return{
             dialogUploadVisible:false,
+            viewAreaHook:'table',
         }
     },
     methods:{
@@ -114,6 +133,13 @@ export default {
 }
 .fbutton{
     font-size: 15px;
+}
+.el-aside *{
+    font-size: 40px;
+    color: #909399;
+}
+.el-aside *:hover{
+    color:#409eff;
 }
 
 
