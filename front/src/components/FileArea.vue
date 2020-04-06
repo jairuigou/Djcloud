@@ -8,7 +8,7 @@
             </el-row>
 
             <el-row>
-               <FileTable v-on:relogin="relogin"></FileTable>
+               <FileTable v-on:relogin="relogin" v-bind:reload="reloadTableFlag"></FileTable>
             </el-row>
 
             <el-dialog title="Upload File" :visible.sync="dialogUploadVisible">
@@ -38,6 +38,7 @@ export default {
     data(){
         return{
             dialogUploadVisible:false,
+            reloadTableFlag:false,
         }
     },
     methods:{
@@ -65,7 +66,7 @@ export default {
                 if(status ==='not_logged')
                     this.$emit("relogin",true);
                 else if(status==='upload_ok')
-                    this.reloadFlag = !this.reloadFlag;
+                    this.reloadTableFlag = !this.reloadTableFlag;
                 else
                     this.$message.error(status);   
             })
