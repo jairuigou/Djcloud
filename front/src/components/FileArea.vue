@@ -18,7 +18,7 @@
         </el-aside>
         <el-main>
             <el-row v-if="viewAreaHook=='table'">
-               <FileTable v-on:relogin="relogin"></FileTable>
+               <FileTable v-on:relogin="relogin" v-bind:reload="reloadTableFlag"></FileTable>
             </el-row>
 
             <el-row v-if="viewAreaHook=='image'">
@@ -57,6 +57,7 @@ export default {
         return{
             dialogUploadVisible:false,
             viewAreaHook:'table',
+            reloadTableFlag:false,
         }
     },
     methods:{
@@ -84,7 +85,7 @@ export default {
                 if(status ==='not_logged')
                     this.$emit("relogin",true);
                 else if(status==='upload_ok')
-                    this.reloadFlag = !this.reloadFlag;
+                    this.reloadTableFlag = !this.reloadTableFlag;
                 else
                     this.$message.error(status);   
             })

@@ -62,10 +62,16 @@ export default {
             typefilt:[]
         }
     },
+    props:{
+        reload : Boolean,
+    },
     mounted:function(){
         this.reloadFlag = !this.reloadFlag;
     },
     watch:{
+        reload:function(){
+            this.reloadFlag = !this.reloadFlag;
+        },
         reloadFlag:function() {
             this.axios({
                 url:'api/infodata',
