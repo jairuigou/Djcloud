@@ -84,15 +84,18 @@ export default {
                 var status = response.data['status'];
                 if(status ==='not_logged')
                     this.$emit("relogin",true);
-                else if(status==='upload_ok')
+                else if(status==='upload_ok'){
                     this.reloadTableFlag = !this.reloadTableFlag;
+                    this.dialogUploadVisible = false;
+                    this.$refs.upload.clearFiles(); 
+                }
                 else
-                    this.$message.error(status);   
+                    this.$message.error(status);
             })
             .catch(error =>{
                 this.$message.error("upload request error");
             })
-            this.dialogUploadVisible = false;
+            
         },
         logout(){
             var token = this.getcsrftoken('csrftoken');
