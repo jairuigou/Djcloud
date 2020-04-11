@@ -36,6 +36,7 @@
             <div class="el-upload__text">Drop file here or<em>click to select</em></div>
             </el-upload>
             <el-button @click="upload()">upload</el-button>
+            <el-progress :percentage="uploadProgressval" v-if="uploadProgressVisible==true"></el-progress>
             </el-dialog>
         </el-main>
         </el-container>
@@ -56,6 +57,8 @@ export default {
     data(){
         return{
             dialogUploadVisible:false,
+            uploadProgressVisible:false,
+            uploadProgressval: 0,
             viewAreaHook:'table',
             reloadTableFlag:false,
         }
@@ -72,13 +75,16 @@ export default {
             var formdata = new FormData();
             formdata.append('csrfmiddlewaretoken',token);
             formdata.append('file',file.file);
+        
+            this.uploadProgressVisible = true;
+            this.uploadProgressval = 0;
             this.axios({
                 url: 'api/uploadsmall',
                 method:'post',
                 data:formdata,
                 headers :{'Content-Type':'application/x-www-form-urlencoded'},
                 onUploadProgress: ProgressEvent=>{
-                    console.log(Math.round( (ProgressEvent.loaded * 100) / ProgressEvent.total ));
+                    this.uploadProgressval = Math.round( (ProgressEvent.loaded * 100) / ProgressEvent.total )
                 }
             }).then(response =>{
                 var status = response.data['status'];
@@ -88,12 +94,18 @@ export default {
                     this.reloadTableFlag = !this.reloadTableFlag;
                     this.dialogUploadVisible = false;
                     this.$refs.upload.clearFiles(); 
+                    this.uploadProgressVisible = false;
                 }
-                else
+                else{
                     this.$message.error(status);
+                    this.uploadProgressVisible = false;
+                }
+                
+                
             })
             .catch(error =>{
                 this.$message.error("upload request error");
+                this.uploadProgressVisible = false;
             })
             
         },
