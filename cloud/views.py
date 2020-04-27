@@ -27,6 +27,7 @@ def api_verify(request):
         request.session.set_expiry(SESSION_TIME)
         data['status'] = 'login_ok'
     return JsonResponse(data) 
+@ensure_csrf_cookie
 def api_checkstatus(request):
     data = {
         'status':'not_logged'
