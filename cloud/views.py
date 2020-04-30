@@ -4,9 +4,11 @@ from django.urls import reverse
 from django.contrib.auth import authenticate,login,logout
 from django.views.decorators.csrf import ensure_csrf_cookie
 from .models import Filepath
+
+from .func.handlefile import *
 import os,datetime,getpass
 
-FILE_SAVE_PATH = "/home/"+getpass.getuser()+"/cloudfile/"
+
 SESSION_TIME = 100000
 # to index page
 ROOT_URL = '/'
@@ -76,7 +78,7 @@ def api_upload_smallfile(request):
         filesize = uploadfile.size
         viewsize = parse_viewsize(filesize)
         viewname = parse_viewname(filename)
-        savedir = get_user_filepath(username) 
+        savedir = generate_savepath(username) 
         fp = open((savedir+filename),"wb")
         for chunk in uploadfile.chunks():
             fp.write(chunk)
@@ -146,7 +148,7 @@ def upload_largefile_post(request):
         filetype = request.POST['type']
         sliceindex = request.POST['index']
 
-        savedir = get_user_filepath(username)
+        savedir = generate_savepath(username)
         fp = open((savedir+"slice/"+filename+sliceindex),"wb") 
         for chunk in uploadslice.chunks():
             fp.write(chunk)
@@ -159,81 +161,5 @@ def upload_largefile_post(request):
 
 
 
-#fun
-# get user file path /rootpath/username
-def get_user_filepath(username):
-    if(not os.path.exists(FILE_SAVE_PATH + username)):
-        if(not os.path.exists(FILE_SAVE_PATH)):
-            init_total_space()
-        init_user_space(username)
-    return FILE_SAVE_PATH+username+"/"
-def init_total_space():
-    os.mkdir(FILE_SAVE_PATH)
-def init_user_space(username):
-    os.mkdir(FILE_SAVE_PATH + username)
-    os.mkdir(FILE_SAVE_PATH + username+"/"+"slice")
 
-def rm_user_dir(username):
-    if(os.path.exists(FILE_SAVE_PATH + username)):
-        os.rmdir(FILE_SAVE_PATH + username)
-
-def rm_file(username,filename):
-    filepath = FILE_SAVE_PATH + username + '/' + filename
-    if(os.path.exists(filepath)):
-        os.remove(filepath)
-
-def is_hasfile(username,filename):
-	filepath = FILE_SAVE_PATH + username + '/' + filename
-	if(os.path.exists(filepath)):
-		return True
-	else:
-		return False
-
-def parse_viewtype(filename):
-	if '.' in filename:
-		return filename.split('.')[1]
-	else:
-		return "unknown"
-
-def parse_viewsize(filesize):
-    filesizeval = int(filesize)
-    B = filesizeval
-    count = 0
-    while B>1024 :
-        B = int(B/1024)
-        count += 1
-    unit = ['B','KB','MB','GB','TB']
-    integer = B
-    decimal = int(filesizeval % (pow(1024,count)) / pow(1024,count) * 100)
-    viewsize = str(integer) + '.'
-    if decimal < 10:
-        viewsize += '0'
-    viewsize += str(decimal) + unit[count]
-    return viewsize
-
-def parse_viewname(filename):
-    viewname = filename
-    if '.' in filename:
-        viewname = filename.split('.',1)[0]
-    return viewname
-
-def parse_filename(filename):
-    hasFile = Filepath.objects.filter(filename=filename)
-    if hasFile:
-        if '.' in filename:
-            div = filename.split('.',1)
-            firstname = div[0]
-            secondname = div[1]
-            suffix = 0
-            while hasFile:
-                filename = firstname + "(" + str(suffix) + ")." + secondname
-                hasFile = Filepath.objects.filter(filename=filename)
-                suffix = suffix + 1
-        else:
-            suffix = 0
-            while hasFile:
-                filename = filename + "(" + str(suffix) +")"
-                hasFile = Filepath.objects.filter(filename=filename)
-                suffix = suffix + 1
-    return filename
 
