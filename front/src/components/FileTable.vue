@@ -54,6 +54,7 @@ stripe
 
 </template>
 <script>
+import {getcsrftoken,checkstatus} from "../util/core";
 export default {
     data(){
         return{
@@ -121,28 +122,42 @@ export default {
         typefiltmethod(value,row){
             return row.type === value;
         },
-        progressTest(row){
-            row.progressvisible = true;
-            for(var i=0;i<100;i++){
-                row.downloadprecentage = i;
-                console.log(i);
-                setTimeout(2000);
-            }
-        },
         handleView(row){
-            if(row['type'] == 'jpg'){
-                this.download(row['filename'],1,row);
-            }
-            else{
-                this.download(row['filename'],2,row);
-            }
+            checkstatus().then(status=>{
+                if(status === false){
+                    this.$message.warning("Login expired");
+                    this.$router.push('/login');
+                }
+                else if (status == 'server error'){
+                    this.$message.error(status);
+                }
+                else{
+                    if(row['type'] == 'jpg'){
+                        this.download(row['filename'],1,row);
+                    }
+                    else{
+                    this.download(row['filename'],2,row);
+                    }
+                }
+            }) 
         },
         handleDownload(row){
-            this.download(row['filename'],0,row);
+            checkstatus().then(status=>{
+                if(status === false){
+                    this.$message.warning("Login expired");
+                    this.$router.push('/login');
+                }
+                else if (status == 'server error'){
+                    this.$message.error(status);
+                }
+                else{
+                    this.download(row['filename'],0,row);
+                }
+            }) 
         },
         download(filename,method,row){
             row.downloadprecentage = 0;
-            var token = this.getcsrftoken('csrftoken');
+            var token = getcsrftoken('csrftoken');
             var formdata = new FormData();
             formdata.append('csrfmiddlewaretoken',token);
             formdata.append('file',filename);
@@ -178,11 +193,25 @@ export default {
             })
             .catch(error =>{
                 this.$message.error("download error");
-                this.$emit("relogin",true);
             })
         },
         handleDelete(row){
-            var token = this.getcsrftoken('csrftoken');
+            checkstatus().then(status=>{
+                if(status === false){
+                    this.$message.warning("Login expired");
+                    this.$router.push('/login');
+                }
+                else if (status == 'server error'){
+                    this.$message.error(status);
+                }
+                else{
+                    this.delete(row);
+                }
+            }) 
+        },
+        delete(row)
+        {
+            var token = getcsrftoken('csrftoken');
             var formdata = new FormData();
             formdata.append('csrfmiddlewaretoken',token);
             formdata.append('file',row['filename']);
@@ -193,32 +222,15 @@ export default {
                 headers :{'Content-Type':'application/x-www-form-urlencoded'}
             }).then(response =>{
                 var status = response.data['status'];
-                if(status ==='not_logged'){
-                    this.$message.warning("please login again");
-                    this.$emit("relogin",true);
-                }
-                else if(status==='delete_ok')
+                if(status==='delete_ok')
                     this.reloadFlag = !this.reloadFlag;
                 else
-                    console.log(status);
+                    this.$message.warning(status);
             })
             .catch(error =>{
                 this.$$message.error("delete request error");
             })
-        },
-        getcsrftoken: function(name){
-            if(document.cookie && document.cookie!=''){
-                var cookies = document.cookie.split(';');
-                for( var i=0;i<cookies.length;i++){
-                    var cookie = cookies[i];
-                    var kk = cookie.split('=');
-                    if( kk[0] == name){
-                        return kk[1];
-                    }
-                } 
-            }
-            return "";
-        }
+        } 
     }
 }
 </script>

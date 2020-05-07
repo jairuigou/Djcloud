@@ -18,7 +18,7 @@
         </el-aside>
         <el-main>
             <el-row v-if="viewAreaHook=='table'">
-               <FileTable v-on:relogin="relogin" v-bind:reload="reloadTableFlag"></FileTable>
+               <FileTable v-bind:reload="reloadTableFlag"></FileTable>
             </el-row>
 
             <el-row v-if="viewAreaHook=='image'">
@@ -47,8 +47,9 @@
 
 </template>
 <script>
-import FileTable from "./FileTable"
-import ImageView from "./ImageView"
+import {getcsrftoken,checkstatus} from '../util/core';
+import FileTable from "./FileTable";
+import ImageView from "./ImageView";
 export default {
     components: {
         FileTable,
@@ -64,18 +65,14 @@ export default {
         }
     },
     methods:{
-        relogin(status){
-            this.$emit("relogin",true);
-        },
         upload(){
             this.$refs.upload.submit();
         },
-        uploadrequest(file){
-            var token = this.getcsrftoken('csrftoken');
+        uploadfunc(file){
+            var token = getcsrftoken('csrftoken');
             var formdata = new FormData();
             formdata.append('csrfmiddlewaretoken',token);
             formdata.append('file',file.file);
-        
             this.uploadProgressVisible = true;
             this.uploadProgressval = 0;
             this.axios({
@@ -88,29 +85,39 @@ export default {
                 }
             }).then(response =>{
                 var status = response.data['status'];
-                if(status ==='not_logged')
-                    this.$emit("relogin",true);
-                else if(status==='upload_ok'){
+                if(status==='upload_ok'){
                     this.reloadTableFlag = !this.reloadTableFlag;
                     this.dialogUploadVisible = false;
                     this.$refs.upload.clearFiles(); 
                     this.uploadProgressVisible = false;
                 }
                 else{
-                    this.$message.error(status);
+                    this.$message.warning(status);
                     this.uploadProgressVisible = false;
                 }
-                
-                
             })
             .catch(error =>{
                 this.$message.error("upload request error");
                 this.uploadProgressVisible = false;
             })
-            
         },
+        uploadrequest(file){
+            checkstatus().then(status=>{
+                if(status === false){
+                    this.$message.warning("Login expired");
+                    this.$router.push('/login');
+                }
+                else if (status == 'server error'){
+                    this.$message.error(status);
+                }
+                else{
+                    this.uploadfunc(file);
+                }
+            }) 
+        },
+        
         logout(){
-            var token = this.getcsrftoken('csrftoken');
+            var token = getcsrftoken('csrftoken');
             var formdata = new FormData();
             formdata.append('csrfmiddlewaretoken',token);
             formdata.append('status','logout');
@@ -120,25 +127,13 @@ export default {
                 data:formdata,
                 headers :{'Content-Type':'application/x-www-form-urlencoded'}
             }).then(response =>{
-                this.$emit("relogin",true);
+                this.$message.success("logout");
+                this.$router.push("/login");
             })
             .catch(error =>{
-                console.log("logout request error");
+                this.$message.error("logout request error");
             })
         },
-        getcsrftoken: function(name){
-            if(document.cookie && document.cookie!=''){
-                var cookies = document.cookie.split(';');
-                for( var i=0;i<cookies.length;i++){
-                    var cookie = cookies[i];
-                    var kk = cookie.split('=');
-                    if( kk[0] == name){
-                        return kk[1];
-                    }
-                } 
-            }
-            return "";
-        }
     }
 }
 </script>

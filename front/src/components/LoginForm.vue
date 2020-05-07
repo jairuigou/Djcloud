@@ -1,4 +1,7 @@
 <template>
+    <div id="login">
+        <h1> DJCLoud</h1>
+    <el-row type="flex" class="loginform">
     <el-card class="login-card">
         <div slot="header" class="head">
             <span>Login</span>
@@ -27,9 +30,12 @@
             </el-form-item>
             </el-form>
         </div>
-    </el-card>    
+    </el-card>
+    </el-row>
+    </div>
 </template>
 <script>
+import {getcsrftoken} from '../util/core';
 export default {
     data(){
         var validateUser = (rule,value,callback)=>{
@@ -70,7 +76,7 @@ export default {
             this.$refs[formName].validate((valid)=>{
                 if(valid){
                     this.bloading = true;
-                    var token = this.getcsrftoken('csrftoken');
+                    var token = getcsrftoken('csrftoken');
                     var formdata = new FormData();
 			        formdata.append('username',this.form.username);
 			        formdata.append('password',this.form.password);
@@ -84,7 +90,7 @@ export default {
                         var status = response.data['status'];
                         if(status == "login_ok" || status == "logged"){
                             this.$message.success("Success");
-                            this.$emit('changestatus',true);
+                            this.$router.push("/filearea");
                         }
                         else{
                             this.bloading=false;
@@ -101,20 +107,6 @@ export default {
                 }
             });
         },
-        getcsrftoken: function(name){
-            if(document.cookie && document.cookie!=''){
-                var cookies = document.cookie.split(';');
-                for( var i=0;i<cookies.length;i++){
-                    var cookie = cookies[i];
-                    var kk = cookie.split('=');
-                    if( kk[0] == name){
-                        return kk[1];
-                    }
-                } 
-            }
-            return "";
-        },
-        
     }
 
 }
@@ -123,5 +115,16 @@ export default {
 .login-card{
     width:330px;
     height:350px
+}
+h1{
+  color :rgb(0, 174, 255);
+  font-size: 100px;
+  font-weight: 900;
+  text-align: center;
+  letter-spacing: 20px;
+}
+.loginform{
+    justify-content: center; 
+
 }
 </style>
