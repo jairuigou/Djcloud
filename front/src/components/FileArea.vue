@@ -105,7 +105,7 @@ export default {
             checkstatus().then(status=>{
                 if(status === false){
                     this.$message.warning("Login expired");
-                    this.$router.push('/login');
+                    this.$store.commit('changeLoginStatus','error');
                 }
                 else if (status == 'server error'){
                     this.$message.error(status);
@@ -128,7 +128,7 @@ export default {
                 headers :{'Content-Type':'application/x-www-form-urlencoded'}
             }).then(response =>{
                 this.$message.success("logout");
-                this.$router.push("/login");
+                this.$store.commit('changeLoginStatus','error');
             })
             .catch(error =>{
                 this.$message.error("logout request error");

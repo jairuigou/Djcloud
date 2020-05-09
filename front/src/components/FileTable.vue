@@ -80,7 +80,7 @@ export default {
             }).then(response =>{
                 var status = response.data['status'];
                 if(status == "not_logged"){
-                    this.$emit("relogin",true);
+                    this.$store.commit('changeLoginStatus','error');
                 }
                 else{
                     var data = response.data;
@@ -126,7 +126,7 @@ export default {
             checkstatus().then(status=>{
                 if(status === false){
                     this.$message.warning("Login expired");
-                    this.$router.push('/login');
+                    this.$store.commit('changeLoginStatus','error');
                 }
                 else if (status == 'server error'){
                     this.$message.error(status);
@@ -145,7 +145,7 @@ export default {
             checkstatus().then(status=>{
                 if(status === false){
                     this.$message.warning("Login expired");
-                    this.$router.push('/login');
+                    this.$store.commit('changeLoginStatus','error');
                 }
                 else if (status == 'server error'){
                     this.$message.error(status);
@@ -199,7 +199,7 @@ export default {
             checkstatus().then(status=>{
                 if(status === false){
                     this.$message.warning("Login expired");
-                    this.$router.push('/login');
+                    this.$store.commit('changeLoginStatus','error');
                 }
                 else if (status == 'server error'){
                     this.$message.error(status);

@@ -90,7 +90,7 @@ export default {
                         var status = response.data['status'];
                         if(status == "login_ok" || status == "logged"){
                             this.$message.success("Success");
-                            this.$router.push("/filearea");
+                            this.$store.commit('changeLoginStatus','success');
                         }
                         else{
                             this.bloading=false;
