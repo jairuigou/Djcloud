@@ -73,7 +73,7 @@ def parse_viewname(filename):
         viewname = filename.split('.',1)[0]
     return viewname
 
-def parse_filename(filename):
+def parse_filename(filename,Filepath):
     hasFile = Filepath.objects.filter(filename=filename)
     if hasFile:
         if '.' in filename:

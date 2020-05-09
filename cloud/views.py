@@ -72,7 +72,7 @@ def api_upload_smallfile(request):
     uploadfile = request.FILES['file']
     username = request.user.username
     if uploadfile:
-        filename = parse_filename(uploadfile.name)
+        filename = parse_filename(uploadfile.name,Filepath)
         filetype = uploadfile.content_type
         viewtype = parse_viewtype(filename)
         filesize = uploadfile.size
