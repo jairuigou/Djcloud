@@ -10,5 +10,13 @@ module.exports = {
                 }
             }
         }
+    },
+    pages: {
+        client: {
+            entry: 'src/pages/client/main.js'
+        },
+        admin: {
+            entry: 'src/pages/admin/main.js'
+        }
     }
 }

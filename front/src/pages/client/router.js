@@ -1,7 +1,7 @@
 import Vue from 'vue'
 import Router from 'vue-router'
 
-import LoginForm from './components/LoginForm'
+import LoginForm from '../../components/LoginForm'
 import FileArea from './components/FileArea'
 
 Vue.use(Router)

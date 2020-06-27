@@ -54,7 +54,7 @@ stripe
 
 </template>
 <script>
-import {getcsrftoken,checkstatus} from "../util/core";
+import {getcsrftoken,checkstatus} from "../../../util/core";
 export default {
     data(){
         return{

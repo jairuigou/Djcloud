@@ -7,7 +7,7 @@
 </template>
 
 <script>
-import {checkstatus} from './util/core';
+import {checkstatus} from '../../util/core';
 import {mapState} from 'vuex';
 export default {
   name: 'App',
@@ -36,8 +36,10 @@ export default {
       else{
         this.$store.commit('changeLoginStatus','error'); 
       }
-      if(status == 'server error')
+      if(status == 'server error'){
+        console.log("aaaa");
         this.$message.error(status);
+      }
     })
   },
   methods:{

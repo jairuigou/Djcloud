@@ -99,7 +99,7 @@ export default {
                     })
                     .catch(error=>{
                         this.bloading=false;
-                        this.$message.error("request error");
+                        this.$message.error("login request error");
                     }) 
                 }
                 else{

@@ -47,7 +47,7 @@
 
 </template>
 <script>
-import {getcsrftoken,checkstatus} from '../util/core';
+import {getcsrftoken,checkstatus} from '../../../util/core';
 import FileTable from "./FileTable";
 import ImageView from "./ImageView";
 export default {
