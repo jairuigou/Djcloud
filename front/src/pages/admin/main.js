@@ -1,15 +1,16 @@
 import Vue from 'vue'
-import Admin from './Admin.vue'
+import App from './App.vue'
 import Element from 'element-ui'
 import axios from 'axios'
 import vueaxios from 'vue-axios'
 import 'element-ui/lib/theme-chalk/index.css'
+import store from './store'
 
 Vue.use(Element)
 Vue.use(vueaxios,axios)
 Vue.config.productionTip = false
 
 new Vue({
-  el: '#admin',
-  render: h => h(Admin),
-})
+  render: h => h(App),
+  store,
+}).$mount('#app')
